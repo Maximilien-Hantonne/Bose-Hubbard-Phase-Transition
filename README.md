@@ -69,7 +69,7 @@ To generate the HTML documentation using Doxygen on a Linux system, follow these
 The documentation will be generated in the `docs/html` directory. The main page can be opened by navigating to `docs/html/index.html` in your web browser:
 
 ```sh
-xdg-open docs/html/index.html
+firefox docs/html/index.html
 ```
 
 ### LaTeX Documentation
@@ -116,8 +116,8 @@ Command-line options:
 - `-J, --hopping`: Hopping parameter.
 - `-U, --interaction`: On-site interaction parameter.
 - `-u, --potential`: Chemical potential.
-- `-r, --range`: Range for chemical potential and interaction.
-- `-s, --step`: Step for chemical potential and interaction.
+- `-r, --range`: Range of variation of parameters.
+- `-s, --step`: Step of variation of parameters.
 - `-f, --fixed`: Fixed parameter (J, U, or u)
 - `-h, --help`: Display usage information.
 
