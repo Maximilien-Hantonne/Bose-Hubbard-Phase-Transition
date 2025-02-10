@@ -181,8 +181,10 @@ double Operator::order_parameter(const Eigen::VectorXd& eigenvalues, const Eigen
 double Operator::gap_ratio() {
     [[maybe_unused]] Eigen::MatrixXcd eigenvectors;
     int nb_eigen = std::min(20, D/2);
-    double E0 = std::real(this->IRLM_eigen(nb_eigen, eigenvectors)[0]); // ground state energy
-    double E1 = std::real(this->IRLM_eigen(nb_eigen, eigenvectors)[1]); // first excited state energy
+
+    auto eigenvalues = this->IRLM_eigen(nb_eigen, eigenvectors);
+    double E0 = std::real(eigenvalues[0]); // ground state energy
+    double E1 = std::real(eigenvalues[1]); // first excited state energy
     return (E1 - E0) / (E1 + E0);
 }
 
@@ -210,11 +212,7 @@ void Operator::add_interaction(double U, const Eigen::VectorXd& interaction_matr
 double Operator::partition_function(const Eigen::VectorXd& eigenvalues, double temperature) const {
     const double k_B = 1.380649e-23; // Boltzmann constant
     double beta = 1 / (k_B * temperature);
-    double Z = 0;
-	for (int i = 0; i < eigenvalues.size(); i++) { // calculate the partition function using properties of the trace
-        Z += exp(-beta * eigenvalues[i]);
-    }
-    return Z;
+    return (-beta * eigenvalues.array()).exp().sum();
 }
 
 // TODO: Implement the canonical density matrix calculation
