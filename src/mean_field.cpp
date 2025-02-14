@@ -18,7 +18,7 @@
 using namespace Spectra;
 
 
-const double eps = 1e-3; // threshold for the convergence of the self-consistent mean-field method
+const double eps = 1e-6; // threshold for the convergence of the self-consistent mean-field method
 
 // Eigen::SparseMatrix<std::complex<double>> h_MF (std::complex<double> psi, int p, double mu, double J, int q)
 // /* Returns the single particle hamiltonian in the mean-field approximation*/
@@ -96,7 +96,7 @@ Parameters:
 
 {
 
-    std::cout << " *** Start: Self-consistent mean-field method ***" << std::endl;
+    // std::cout << " *** Start: Self-consistent mean-field method ***" << std::endl;
     Clock clock;
     clock.start();
 
@@ -106,7 +106,7 @@ Parameters:
     double e0; // ground state energy
     double e0_new; // new ground state energy
     double tmp = 0; //temporary variable
-    int N_itt=0; 
+    int N_itt=1; 
     int N_itt_inner; // number of iterations
     int p; 
 
@@ -115,17 +115,17 @@ Parameters:
                                    // single particle hamiltonian in the mean-field approximation
     h.setZero();
 
-    std::cout << "*** Computing the superfluid order parameter Psi up to " << eps << " precision ***" << std::endl; 
+    // std::cout << "*** Computing the superfluid order parameter Psi up to " << eps << " precision ***" << std::endl; 
     do
     {
-        std::cout << "*** Inner Loop: Computing the ground state e0 and phi0 up to " << eps << " precision ***" << std::endl;
+        // std::cout << "*** Inner Loop: Computing the ground state e0 and phi0 up to " << eps << " precision ***" << std::endl;
         N_itt_inner = 0; 
         p = 1; 
         h_MF(psi, p, mu, J, q, h); // single particle hamiltonian in the mean-field approximation
         // Define a submatrix view of the matrix h; without allocating new memory 
         Eigen::Block<Eigen::MatrixXd> sub_h = h.block(0, 0, 2*p+1, 2*p+1);
         Spectra::DenseSymMatProd<double> op(sub_h); 
-        Spectra::SymEigsSolver<Spectra::DenseSymMatProd<double>> eigs(op, 1, 6);
+        Spectra::SymEigsSolver<Spectra::DenseSymMatProd<double>> eigs(op, 1, 2*p);
         eigs.init();
         int nconv = eigs.compute(SortRule::SmallestAlge);
         if (eigs.info() != Spectra::CompInfo::Successful) { // verify if the eigen search is a success
@@ -136,13 +136,13 @@ Parameters:
             e0 = eigs.eigenvalues()[0]; // GS eigenvalue 
         }
         
-        p++;
         do
         {
+            p++; 
             h_MF(psi, p, mu, J, q, h); // single particle hamiltonian in the mean-field approximation
             Eigen::Block<Eigen::MatrixXd> sub_h = h.block(0, 0, 2*p+1, 2*p+1);
             Spectra::DenseSymMatProd<double> op(sub_h); 
-            Spectra::SymEigsSolver<Spectra::DenseSymMatProd<double>> eigs(op, 1, 6);
+            Spectra::SymEigsSolver<Spectra::DenseSymMatProd<double>> eigs(op, 1, 2*p);
             eigs.init();
             int nconv = eigs.compute(SortRule::SmallestAlge);
             if (eigs.info() != Spectra::CompInfo::Successful) { // verify if the eigen search is a success
@@ -152,14 +152,13 @@ Parameters:
                 phi0 = eigs.eigenvectors().col(0); // GS eigenvector
                 e0_new = eigs.eigenvalues()[0]; // GS eigenvalue 
             }
-            p++;
             N_itt_inner++; 
             tmp = std::abs(e0-e0_new);
             e0 = e0_new;
         }while(tmp>eps); 
  
-        std::string message = "Try " + std::to_string(N_itt) + ": e0 converged in " + std::to_string(N_itt_inner) + " iterations, and it took";
-        clock.time_s(message); 
+        // std::string message = "Try " + std::to_string(N_itt) + ": e0 converged in " + std::to_string(N_itt_inner) + " iterations, and it took";
+        // clock.time_us(message); 
         N_itt++; 
 
         psi_new = SF_density(phi0, p); // new ansatz for the superfluid order parameter
@@ -167,9 +166,9 @@ Parameters:
         psi = psi_new;
     }while(tmp>eps);
     
-    std::string message = "The superfluid order parameter Psi converged in " + std::to_string(N_itt) + " iterations, and it took";
-    clock.time_min(message); 
-    std::cout << " *** End: Self-consistent mean-field method ***" << std::endl;
+    // std::string message = "The superfluid order parameter Psi converged in " + std::to_string(N_itt) + " iterations, and it took";
+    // clock.time_ms(message); 
+    // std::cout << " *** End: Self-consistent mean-field method ***" << std::endl;
     
     return psi;
 }

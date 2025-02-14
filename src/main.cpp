@@ -15,7 +15,8 @@
 #include "hamiltonian.h"
 #include "operator.h"
 #include "neighbours.h"
-#include "mean_field.cpp"
+#include "mean_field.h"
+#include <random>
 
 
 
@@ -108,13 +109,27 @@ void print_usage() {
 
 int main(int argc, char *argv[]) {
 
-    double mu = 0.5;
-    double J = 0; 
-    int q = 2; 
-    double psi0 = 0.5;
-    std::ofstream file("mean_field.txt");
-    file << psi0 << std::endl; 
-    file << mu << J << SCMF(mu, J, q, psi0);
+    // Create a random number generator
+    std::random_device rd; // Seed generator
+    std::mt19937 gen(rd()); // Mersenne Twister generator
+    std::uniform_real_distribution<> dis(0.0, 1.0); // Uniform distribution in [0, 1]
+
+    int n = 1000; 
+    double mu_min = 0; 
+    double mu_max = 4; 
+    double dmu = (mu_max - mu_min) / n;
+    double J_min = 0; 
+    double J_max = 0.5; 
+    double dJ = (J_max - J_min) / n;
+    double q = 1; 
+    std::ofstream file("mean_field.txt"); 
+
+    for (double mu = mu_min; mu < mu_max; mu += dmu) {
+        for (double J = J_min; J < J_max; J += dmu) {
+            double psi0 = dis(gen); 
+            file << mu << " " << J << " " << SCMF(mu, J, q, psi0) << std::endl;
+        }
+    }
 
     file.close();
 

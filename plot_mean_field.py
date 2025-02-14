@@ -38,3 +38,5 @@ plt.tight_layout()
 plt.savefig(os.path.join(save_path, "mean_field_test1.png"))
 plt.close(fig)
 
+
+
