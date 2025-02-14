@@ -17,7 +17,7 @@
 #include "neighbours.h"
 #include "mean_field.h"
 #include <random>
-
+#include "tqdm.h"
 
 
 /** 
@@ -124,12 +124,19 @@ int main(int argc, char *argv[]) {
     double q = 1; 
     std::ofstream file("mean_field.txt"); 
 
-    for (double mu = mu_min; mu < mu_max; mu += dmu) {
-        for (double J = J_min; J < J_max; J += dmu) {
+    for (double mu : tqdm::range(mu_min, mu_max, dmu)) {
+        for (double J : tqdm::range(J_min, J_max, dJ)) {
             double psi0 = dis(gen); 
             file << mu << " " << J << " " << SCMF(mu, J, q, psi0) << std::endl;
         }
     }
+
+    // for (double mu = mu_min; mu < mu_max; mu += dmu) {
+    //     for (double J = J_min; J < J_max; J += dmu) {
+    //         double psi0 = dis(gen); 
+    //         file << mu << " " << J << " " << SCMF(mu, J, q, psi0) << std::endl;
+    //     }
+    // }
 
     file.close();
 
