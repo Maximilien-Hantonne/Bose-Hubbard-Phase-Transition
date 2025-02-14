@@ -127,6 +127,7 @@ int main(int argc, char *argv[]) {
     for (double mu : tqdm::range(mu_min, mu_max, dmu)) {
         for (double J : tqdm::range(J_min, J_max, dJ)) {
             double psi0 = dis(gen); 
+            // double psi0 = 0.5;
             file << mu << " " << J << " " << SCMF(mu, J, q, psi0) << std::endl;
         }
     }

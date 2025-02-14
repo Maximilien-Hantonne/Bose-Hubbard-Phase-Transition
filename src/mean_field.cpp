@@ -20,32 +20,6 @@ using namespace Spectra;
 
 const double eps = 1e-6; // threshold for the convergence of the self-consistent mean-field method
 
-// Eigen::SparseMatrix<std::complex<double>> h_MF (std::complex<double> psi, int p, double mu, double J, int q)
-// /* Returns the single particle hamiltonian in the mean-field approximation*/
-// {
-//     Eigen::SparseMatrix<std::complex<double>> h(2*p+1, 2*p+1);
-
-//     // diagonal elements 
-//     for (int i = 0; i < 2*p+1; i++)
-//     {
-//         h.insert(i, i) = -mu*i + (0.5)*i*(i-1) + q*J*psi*psi;
-//     }
-
-//     //off diagonal elements 
-//     for (int j = 1; j < 2*p; j++)
-//     {
-//         h.insert(j+1,j) = -q*J*psi*sqrt(j+1);
-//         h.insert(j-1, j) = -q*J*psi*sqrt(j);
-//     }
-
-//     h.insert(1,0) = -q*J*psi*sqrt(1);
-//     h.insert(2*p-1, 2*p) = -q*J*psi*sqrt(2*p);
-
-//     return h;
-// }
-
-
-
 void h_MF (double psi, int p, double mu, double J, int q, Eigen::MatrixXd& h)
 {
     // fill diagonal elements
@@ -68,10 +42,6 @@ void h_MF (double psi, int p, double mu, double J, int q, Eigen::MatrixXd& h)
     }
 }
 
-
-
-
-
 double SF_density(Eigen::VectorXd& phi0, int p)
 /* Returns the mean value of the annihilation operator <phi0|a|phi0>, that is the superfluid density of the state phi0 */
 {
@@ -83,8 +53,6 @@ double SF_density(Eigen::VectorXd& phi0, int p)
     }
     return a; 
 }
-
-
 
 double SCMF(double mu, double J, int q ,double psi0)
 /* Self-consistent mean-field method to highlight the Superfluid-Mott insulator transition
@@ -129,7 +97,8 @@ Parameters:
         eigs.init();
         int nconv = eigs.compute(SortRule::SmallestAlge);
         if (eigs.info() != Spectra::CompInfo::Successful) { // verify if the eigen search is a success
-            throw std::runtime_error("Eigenvalue computation for the mean-field single particle hamiltonian failed.");
+            // throw std::runtime_error("Eigenvalue computation for the mean-field single particle hamiltonian failed.");
+            return -1.0;
         }
         else{
             phi0 = eigs.eigenvectors().col(0); // GS eigenvector

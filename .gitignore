@@ -4,6 +4,7 @@ Doxyfile
 #Ignore folders
 .cache/
 build/
+figures/
 
 #Ignore various files
 *.o
