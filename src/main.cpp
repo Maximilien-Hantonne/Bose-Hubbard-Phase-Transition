@@ -72,6 +72,26 @@ size_t estimateSparseMatrixMemoryUsage(const Eigen::SparseMatrix<double>& matrix
     return memoryUsage;
 }
 
+void timer() {
+    static std::chrono::high_resolution_clock::time_point start_time;
+    static bool is_running = false;
+    if (!is_running) {
+        start_time = std::chrono::high_resolution_clock::now();
+        is_running = true;
+    } else {
+        auto end_time = std::chrono::high_resolution_clock::now();
+        std::chrono::duration<double> duration = end_time - start_time;
+        is_running = false;
+        if (duration.count() > 60) {
+            int minutes = static_cast<int>(duration.count()) / 60;
+            double seconds = duration.count() - (minutes * 60);
+            std::cout << "Calculation duration: " << minutes << " minutes " << seconds << " seconds." << std::endl;
+        } else {
+            std::cout << "Calculation duration: " << duration.count() << " seconds." << std::endl;
+        }
+    }
+}
+
 /**
  * @brief Print the usage information for the program.
  */
@@ -220,7 +240,7 @@ int main(int argc, char *argv[]) {
 
 
     // HAMILTONIAN INITIALIZATION
-    auto start = std::chrono::high_resolution_clock::now();
+    timer();
     BH jmatrix(nei, m, n, 1, 0, 0);
     Eigen::SparseMatrix<double> jsmatrix = jmatrix.getHamiltonian();
     Operator JH(std::move(jsmatrix));
@@ -236,12 +256,10 @@ int main(int argc, char *argv[]) {
     
     // SETTING THE NUMBER OF THREADS FOR PARALLELIZATION
     long available_memory = get_available_memory();
-    std::cout << "Available memory: " << available_memory << " KB" << std::endl;
     size_t jsmatrixMemoryUsage = estimateSparseMatrixMemoryUsage(jsmatrix);
     size_t usmatrixMemoryUsage = estimateSparseMatrixMemoryUsage(Usmatrix);
     size_t umatrixMemoryUsage = estimateSparseMatrixMemoryUsage(usmatrix);
     size_t totalMemoryUsage = jsmatrixMemoryUsage + usmatrixMemoryUsage + umatrixMemoryUsage;
-    std::cout << "Estimated total memory usage for sparse matrices: " << totalMemoryUsage << " bytes" << std::endl;
     int num_threads = std::min(available_memory / totalMemoryUsage, static_cast<size_t>(omp_get_max_threads()));
     omp_set_num_threads(num_threads);
     std::cout << "Using OpenMP with " << num_threads << " threads." << std::endl;
@@ -293,15 +311,7 @@ int main(int argc, char *argv[]) {
 
 
     // EFFICIENCY OF THE CALCULATION
-    auto end = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> duration = end - start;
-    if (duration.count() > 60) {
-        int minutes = static_cast<int>(duration.count()) / 60;
-        double seconds = duration.count() - (minutes * 60);
-        std::cout << "Parameters calculation time: " << minutes << " minutes " << seconds << " seconds" << std::endl;
-    } else {
-        std::cout << "Parameters calculation time: " << duration.count() << " seconds" << std::endl;
-    }
+    timer();
     get_memory_usage(true);
 
 

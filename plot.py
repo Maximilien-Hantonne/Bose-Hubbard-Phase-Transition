@@ -45,30 +45,54 @@ def wrap_title(title, width=30):
     return "\n".join(textwrap.wrap(title, width))
 
 # Plot the heatmap for gap ratio
-plt.figure(figsize=(18, 6))
+plt.figure(figsize=(18, 6))  # Increase the figure size
 
 plt.subplot(1, 3, 1)
 contour1 = plt.contourf(x_grid, y_grid, gap_ratio.reshape(len(y_unique), len(x_unique)), levels=50, cmap='viridis')
-plt.colorbar(contour1, label='Gap Ratio')
+cbar1 = plt.colorbar(contour1, label='Gap Ratio')
+cbar1.ax.axhline(y=0.39, color='red', linestyle='solid', linewidth=3)
+cbar1.ax.axhline(y=0.53, color='red', linestyle='solid', linewidth=3)
 plt.xlabel(x_label)
 plt.ylabel(y_label)
-plt.title(wrap_title('Gap Ratio with respect to {} and {}'.format(x_label, y_label)), fontsize=10)
+plt.title(wrap_title('Gap Ratio with respect to {} and {}'.format(x_label, y_label)), fontsize=12)
 
 # Plot the heatmap for boson density
 plt.subplot(1, 3, 2)
 contour2 = plt.contourf(x_grid, y_grid, boson_density.reshape(len(y_unique), len(x_unique)), levels=50, cmap='viridis')
-plt.colorbar(contour2, label='Boson Density')
+cbar2 = plt.colorbar(contour2, label='Boson Density')
 plt.xlabel(x_label)
 plt.ylabel(y_label)
-plt.title(wrap_title('Boson Density with respect to {} and {}'.format(x_label, y_label)), fontsize=10)
+plt.title(wrap_title('Boson Density with respect to {} and {}'.format(x_label, y_label)), fontsize=12)
 
 # Plot the heatmap for compressibility
 plt.subplot(1, 3, 3)
 contour3 = plt.contourf(x_grid, y_grid, compressibility.reshape(len(y_unique), len(x_unique)), levels=50, cmap='viridis')
-plt.colorbar(contour3, label='Compressibility')
+cbar3 = plt.colorbar(contour3, label='Compressibility')
 plt.xlabel(x_label)
 plt.ylabel(y_label)
-plt.title(wrap_title('Compressibility with respect to {} and {}'.format(x_label, y_label)), fontsize=10)
+plt.title(wrap_title('Compressibility with respect to {} and {}'.format(x_label, y_label)), fontsize=12)
+
+plt.tight_layout()
+plt.show()
+
+# Load the projected data for PCA
+projected_data = np.loadtxt('projected_data.txt')
+
+# Check if the data has at least two columns
+if projected_data.shape[1] < 2:
+    raise ValueError("Projected data must have at least two columns for plotting.")
+
+# Extract the first two principal components
+pc1 = projected_data[:, 0]
+pc2 = projected_data[:, 1]
+
+# Plot the PCA scatter plot
+plt.figure(figsize=(8, 6))
+plt.scatter(pc1, pc2, c='blue', marker='o', edgecolor='k', alpha=0.7)
+plt.title('Projection onto the First Two Principal Components', fontsize=12)
+plt.xlabel('Principal Component 1')
+plt.ylabel('Principal Component 2')
+plt.grid(True)
 
 plt.tight_layout()
 plt.show()
