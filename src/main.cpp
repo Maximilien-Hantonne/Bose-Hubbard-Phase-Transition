@@ -6,7 +6,6 @@
 #include <iostream>
 #include <vector>
 #include <chrono>
-#include <complex>
 #include <getopt.h>
 #include <sys/resource.h>
 #include <sys/sysinfo.h>
@@ -17,6 +16,14 @@
 #include "neighbours.h"
 
 
+// Standardize the matrix using Eigen functions
+Eigen::MatrixXd standardize_matrix(const Eigen::MatrixXd& matrix) {
+    Eigen::MatrixXd standardized_matrix = matrix;
+    Eigen::VectorXd mean = matrix.colwise().mean();
+    Eigen::VectorXd stddev = ((matrix.rowwise() - mean.transpose()).array().square().colwise().sum() / (matrix.rows() - 1)).sqrt();
+    standardized_matrix = (matrix.rowwise() - mean.transpose()).array().rowwise() / stddev.transpose().array();
+    return standardized_matrix;
+}
 
 /** 
  * @brief Get the memory usage of the program in KB and optionally print it.
@@ -236,63 +243,52 @@ int main(int argc, char *argv[]) {
     size_t totalMemoryUsage = jsmatrixMemoryUsage + usmatrixMemoryUsage + umatrixMemoryUsage;
     std::cout << "Estimated total memory usage for sparse matrices: " << totalMemoryUsage << " bytes" << std::endl;
     int num_threads = std::min(available_memory / totalMemoryUsage, static_cast<size_t>(omp_get_max_threads()));
-    omp_set_num_threads(8);
+    omp_set_num_threads(num_threads);
     std::cout << "Using OpenMP with " << num_threads << " threads." << std::endl;
     
 
     // CALCULATING AND SAVING THE PHASE TRANSITION PARAMETERS
-    if (fixed_param == "J") {
-        JH = JH * J; 
+    auto calculate_and_save = [&](auto param1_min, auto param1_max, auto param2_min, auto param2_max, auto param1_step, auto param2_step, auto& H_fixed) {
+        int num_param1 = static_cast<int>((param1_max - param1_min) / param1_step) + 1;
+        int num_param2 = static_cast<int>((param2_max - param2_min) / param2_step) + 1;
+        Eigen::MatrixXd matrix_ratios(num_param1 * num_param2, H_fixed.gap_ratios().size());
         #pragma omp parallel for collapse(2) schedule(dynamic)
-        for (int i = 0; i < static_cast<int>((U_max - U_min) / s) + 1; ++i) {
-            for (int j = 0; j < static_cast<int>((mu_max - mu_min) / s) + 1; ++j) {
-                double U = U_min + i * s;
-                double mu = mu_min + j * s;
-                Operator H = JH + UH * U + uH * mu;
-                double gap_ratio = H.gap_ratio();
+        for (int i = 0; i < num_param1; ++i) {
+            for (int j = 0; j < num_param2; ++j) {
+                double param1 = param1_min + i * param1_step;
+                double param2 = param2_min + j * param2_step;
+                Operator H = H_fixed + UH * param1 + uH * param2;
+                Eigen::VectorXd vec_ratios = H.gap_ratios();
+                double gap_ratio = vec_ratios.size() > 0 ? vec_ratios.sum() / vec_ratios.size() : 0.0;
                 double boson_density = 0;
                 double compressibility = 0;
                 #pragma omp critical
                 {
-                    file << U << " " << mu << " " << gap_ratio << " " << boson_density << " " << compressibility << std::endl;
-                }
-            }
-        } 
-    } else if (fixed_param == "U") {
-        UH = UH * U;
-        #pragma omp parallel for collapse(2) schedule(dynamic)
-        for (int i = 0; i < static_cast<int>((J_max - J_min) / s) + 1; ++i) {
-            for (int j = 0; j < static_cast<int>((mu_max - mu_min) / s) + 1; ++j) {
-                double J = J_min + i * s;
-                double mu = mu_min + j * s;
-                Operator H = JH * J + UH + uH * mu;
-                double gap_ratio = H.gap_ratio();
-                double boson_density = 0;
-                double compressibility = 0;
-                #pragma omp critical
-                {
-                    file << J << " " << mu << " " << gap_ratio << " " << boson_density << " " << compressibility << std::endl;
-                }
-            }
-        } 
-    } else if (fixed_param == "u") {
-        uH = uH * mu;
-        #pragma omp parallel for collapse(2) schedule(dynamic)
-        for (int i = 0; i < static_cast<int>((J_max - J_min) / s) + 1; ++i) {
-            for (int j = 0; j < static_cast<int>((U_max - U_min) / s) + 1; ++j) {
-                double J = J_min + i * s;
-                double U = U_min + j * s;
-                Operator H = JH * J + UH * U + uH;
-                double gap_ratio = H.gap_ratio();
-                double boson_density = 0;
-                double compressibility = 0;
-                #pragma omp critical
-                {
-                    file << J << " " << U << " " << gap_ratio << " " << boson_density << " " << compressibility << std::endl;
+                    matrix_ratios.row(i * num_param2 + j) = vec_ratios;
+                    file << param1 << " " << param2 << " " << gap_ratio << " " << boson_density << " " << compressibility << std::endl;
                 }
             }
         }
-    } 
+        matrix_ratios = standardize_matrix(matrix_ratios);
+        matrix_ratios = (matrix_ratios.adjoint() * matrix_ratios) / double(matrix_ratios.rows() - 1);
+        Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigensolver(matrix_ratios);
+        Eigen::VectorXd eigenvalues = eigensolver.eigenvalues().real().reverse();
+        Eigen::MatrixXd eigenvectors = eigensolver.eigenvectors().real().rowwise().reverse();
+        Eigen::MatrixXd projected_data = matrix_ratios * eigenvectors.leftCols(2);
+        std::ofstream projected_file("projected_data.txt");
+        projected_file << projected_data << std::endl;
+        projected_file.close();
+    };
+    if (fixed_param == "J") {
+        JH = JH * J;
+        calculate_and_save(U_min, U_max, mu_min, mu_max, s, s, JH);
+    } else if (fixed_param == "U") {
+        UH = UH * U;
+        calculate_and_save(J_min, J_max, mu_min, mu_max, s, s, UH);
+    } else if (fixed_param == "u") {
+        uH = uH * mu;
+        calculate_and_save(J_min, J_max, U_min, U_max, s, s, uH);
+    }
     file.close();
 
 

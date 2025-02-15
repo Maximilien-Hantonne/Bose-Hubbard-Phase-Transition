@@ -1,17 +1,13 @@
-#include <fstream>
 #include <iostream>
-#include <vector>
 #include <chrono>
-#include <array>
 #include <iomanip>
 #include <complex>
-
 #include <Eigen/Dense>
 #include <Eigen/SparseCore>
 #include <Eigen/Eigenvalues>
 
 #include "operator.h"
-#include "neighbours.h"
+
 
 
 

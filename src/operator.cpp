@@ -172,20 +172,38 @@ Eigen::VectorXd Operator::exact_eigen(Eigen::MatrixXd& eigenvectors) const {
 
 // TODO: Implement the order parameter calculation
 /* Calculate the order parameter of the system */
-double Operator::order_parameter(const Eigen::VectorXd& eigenvalues, const Eigen::MatrixXd& eigenvectors) const {
-    throw std::logic_error("This function has not been implemented yet.");
+// double Operator::order_parameter(const Eigen::VectorXd& eigenvalues, const Eigen::MatrixXd& eigenvectors) const {
+//     throw std::logic_error("This function has not been implemented yet.");
+// }
+
+/* Calculate the energy gap ratios of the system */
+Eigen::VectorXd Operator::gap_ratios() const {
+    Eigen::MatrixXcd eigenvectors;
+    int nb_eigen = std::min(15, D/2);
+    auto eigenvalues = this->IRLM_eigen(nb_eigen, eigenvectors);
+    std::vector<double> sorted_eigenvalues(nb_eigen);
+    for (int i = 0; i < nb_eigen; ++i) {
+        sorted_eigenvalues[i] = std::real(eigenvalues[i]);
+    }
+    std::sort(sorted_eigenvalues.begin(), sorted_eigenvalues.end());
+    Eigen::VectorXd gap_ratios(nb_eigen - 2);
+    for (int i = 1; i < nb_eigen - 1; ++i) {
+        double E_prev = sorted_eigenvalues[i - 1];
+        double E_curr = sorted_eigenvalues[i];
+        double E_next = sorted_eigenvalues[i + 1];
+        double min_gap = std::min(E_next - E_curr, E_curr - E_prev);
+        double max_gap = std::max(E_next - E_curr, E_curr - E_prev);
+        gap_ratios[i - 1] = (max_gap != 0) ? (min_gap / max_gap) : 0;
+    }
+    return gap_ratios;
 }
 
-// TODO: Implement the energy gap ratio calculation
-/* Calculate the energy gap ratio of the system */
-double Operator::gap_ratio() {
-    [[maybe_unused]] Eigen::MatrixXcd eigenvectors;
-    int nb_eigen = std::min(20, D/2);
-
-    auto eigenvalues = this->IRLM_eigen(nb_eigen, eigenvectors);
-    double E0 = std::real(eigenvalues[0]); // ground state energy
-    double E1 = std::real(eigenvalues[1]); // first excited state energy
-    return (E1 - E0) / (E1 + E0);
+/* Calculate the average energy gap ratio of the system */
+double Operator::average_gap_ratio() const {
+    Eigen::VectorXd gap_ratios = this->gap_ratios();
+    double sum = gap_ratios.sum();
+    int count = gap_ratios.size();
+    return count > 0 ? sum / count : 0.0;
 }
 
 
@@ -200,9 +218,9 @@ void Operator::add_chemical_potential(double mu, int n) {
 
 //TODO : A ECRIRE
 /* Add an interaction U to the operator */
-void Operator::add_interaction(double U, const Eigen::VectorXd& interaction_matrix) {
-    throw std::logic_error("This function has not been implemented yet.");
-}
+// void Operator::add_interaction(double U, const Eigen::VectorXd& interaction_matrix) {
+//     throw std::logic_error("This function has not been implemented yet.");
+// }
 
 
 ///// THERMODYNAMICAL FUNCTIONS /////
@@ -217,9 +235,9 @@ double Operator::partition_function(const Eigen::VectorXd& eigenvalues, double t
 
 // TODO: Implement the canonical density matrix calculation
 /* Calculate the canonical density matrix for an ALREADY diagonalized hamiltonian */
-void Operator::canonical_density_matrix(const Eigen::VectorXd& eigenvalues, double temperature) const {
-    throw std::logic_error("This function has not been implemented yet.");
-}
+// void Operator::canonical_density_matrix(const Eigen::VectorXd& eigenvalues, double temperature) const {
+//     throw std::logic_error("This function has not been implemented yet.");
+// }
 
 //TODO : A OPTIMISER
 /* Calculate the mean boson density of the system */

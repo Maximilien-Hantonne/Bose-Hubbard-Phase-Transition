@@ -138,12 +138,18 @@ public:
     double order_parameter(const Eigen::VectorXd& eigenvalues, const Eigen::MatrixXd& eigenvectors) const;
 
     /**
-    * @brief Calculate the energy gap ratio of the system.
+    * @brief Calculate the energy gap ratios of the system.
     *
-    * @param eigenvalues The vector of eigenvalues.
-    * @return double The energy gap ratio.
+    * @return Eigen::VectorXd The vector of energy gap ratios.
     */
-    double gap_ratio();
+    Eigen::VectorXd gap_ratios() const;
+
+    /**
+     * @brief Calculate the average energy gap ratio of the system.
+     *
+     * @return double The average energy gap ratio.
+     */
+    double average_gap_ratio() const;
 
     /** 
     * @brief Add a potential term to the operator.
