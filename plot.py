@@ -55,6 +55,7 @@ cbar1.ax.axhline(y=0.53, color='red', linestyle='solid', linewidth=3)
 plt.xlabel(x_label)
 plt.ylabel(y_label)
 plt.title(wrap_title('Gap Ratio with respect to {} and {}'.format(x_label, y_label)), fontsize=12)
+plt.figtext(0.5, 0.01, 'Note: 0.39 is for a Poissonnian distribution and 0.53 is for a Gaussian orthogonal ensemble (GOE)', ha='center', fontsize=9, color='red')
 
 # Plot the heatmap for boson density
 plt.subplot(1, 3, 2)

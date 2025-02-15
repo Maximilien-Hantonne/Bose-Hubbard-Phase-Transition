@@ -63,6 +63,11 @@ long get_available_memory() {
 }
 
 
+/** 
+ * @brief Estimate the memory usage of a sparse matrix.
+ * @param matrix The sparse matrix.
+ * @return The estimated memory usage in bytes.
+ */
 size_t estimateSparseMatrixMemoryUsage(const Eigen::SparseMatrix<double>& matrix) {
     size_t numNonZeros = matrix.nonZeros();
     size_t numCols = matrix.cols();
@@ -72,6 +77,9 @@ size_t estimateSparseMatrixMemoryUsage(const Eigen::SparseMatrix<double>& matrix
     return memoryUsage;
 }
 
+/**
+ * @brief Timer function to measure the duration of the calculation.
+ */
 void timer() {
     static std::chrono::high_resolution_clock::time_point start_time;
     static bool is_running = false;
@@ -211,34 +219,6 @@ int main(int argc, char *argv[]) {
 	const std::vector<std::vector<int>>& nei = neighbours.getNeighbours();
 
 
-    // OPENING THE FILE TO SAVE THE MAP VALUES
-    std::ofstream file("phase.txt");
-    file << fixed_param << " "; 
-    if (fixed_param == "J") {
-        if (J == 0) {
-            std::cerr << "Error: Fixed parameter J cannot be zero.\n";
-            return 1;
-        }
-        file << J << std::endl;
-    } else if (fixed_param == "U") {
-        if (U == 0) {
-            std::cerr << "Error: Fixed parameter U cannot be zero.\n";
-            return 1;
-        }
-        file << U << std::endl;
-    } else if (fixed_param == "u") {
-        if (mu == 0) {
-            std::cerr << "Error: Fixed parameter mu cannot be zero.\n";
-            return 1;
-        }
-        file << mu << std::endl;
-    } else {
-        std::cerr << "Error: Invalid fixed parameter specified.\n";
-        print_usage();
-        return 1;
-    }
-
-
     // HAMILTONIAN INITIALIZATION
     timer();
     BH jmatrix(nei, m, n, 1, 0, 0);
@@ -267,6 +247,25 @@ int main(int argc, char *argv[]) {
 
     // CALCULATING AND SAVING THE PHASE TRANSITION PARAMETERS
     auto calculate_and_save = [&](auto param1_min, auto param1_max, auto param2_min, auto param2_max, auto param1_step, auto param2_step, auto& H_fixed) {
+        std::ofstream file("phase.txt");
+        file << fixed_param << " ";
+        double fixed_value;
+        if (fixed_param == "J") {
+            fixed_value = J;
+        } else if (fixed_param == "U") {
+            fixed_value = U;
+        } else if (fixed_param == "u") {
+            fixed_value = mu;
+        } else {
+            std::cerr << "Error: Invalid fixed parameter specified.\n";
+            print_usage();
+            return 1;
+        }
+        if (fixed_value == 0) {
+            std::cerr << "Error: Fixed parameter " << fixed_param << " cannot be zero.\n";
+            return 1;
+        }
+        file << fixed_value << std::endl;
         int num_param1 = static_cast<int>((param1_max - param1_min) / param1_step) + 1;
         int num_param2 = static_cast<int>((param2_max - param2_min) / param2_step) + 1;
         Eigen::MatrixXd matrix_ratios(num_param1 * num_param2, H_fixed.gap_ratios().size());
@@ -287,6 +286,7 @@ int main(int argc, char *argv[]) {
                 }
             }
         }
+        file.close();
         matrix_ratios = standardize_matrix(matrix_ratios);
         matrix_ratios = (matrix_ratios.adjoint() * matrix_ratios) / double(matrix_ratios.rows() - 1);
         Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigensolver(matrix_ratios);
@@ -296,6 +296,7 @@ int main(int argc, char *argv[]) {
         std::ofstream projected_file("projected_data.txt");
         projected_file << projected_data << std::endl;
         projected_file.close();
+        return 0;
     };
     if (fixed_param == "J") {
         JH = JH * J;
@@ -307,7 +308,6 @@ int main(int argc, char *argv[]) {
         uH = uH * mu;
         calculate_and_save(J_min, J_max, U_min, U_max, s, s, uH);
     }
-    file.close();
 
 
     // EFFICIENCY OF THE CALCULATION
