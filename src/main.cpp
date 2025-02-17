@@ -267,7 +267,7 @@ int main(int argc, char *argv[]) {
             return 1;
         }
         file << fixed_value << std::endl;
-        int nb_eigen = 12;
+        int nb_eigen = 20;
         int num_param1 = static_cast<int>((param1_max - param1_min) / param1_step) + 1;
         int num_param2 = static_cast<int>((param2_max - param2_min) / param2_step) + 1;
         std::vector<double> param1_values(num_param1 * num_param2);
@@ -277,6 +277,7 @@ int main(int argc, char *argv[]) {
         std::vector<double> compressibility_values(num_param1 * num_param2);
         int size = H_fixed.gap_ratios(nb_eigen).size();
         Eigen::MatrixXd matrix_ratios(num_param1 * num_param2, size);
+
         while (true) {
             #pragma omp parallel for collapse(2) schedule(dynamic)
             for (int i = 0; i < num_param1; ++i) {
@@ -289,6 +290,7 @@ int main(int argc, char *argv[]) {
                     double boson_density = 0;
                     double compressibility = 0;
                     int index = i * num_param2 + j;
+                    
                     #pragma omp critical
                     {
                         param1_values[index] = param1;
@@ -300,18 +302,23 @@ int main(int argc, char *argv[]) {
                     }
                 }
             }
+
             std::set<double> unique_gap_ratios(gap_ratios_values.begin(), gap_ratios_values.end());
-            if (unique_gap_ratios.size() >= 5) {
+            if (unique_gap_ratios.size() >= 15) {
                 break;
             }
+
             nb_eigen += 5;
             size = size + 5;
             matrix_ratios.resize(num_param1 * num_param2, size);  
         }
+
         for (int i = 0; i < num_param1 * num_param2; ++i) {
             file << param1_values[i] << " " << param2_values[i] << " " << gap_ratios_values[i] << " " << boson_density_values[i] << " " << compressibility_values[i] << std::endl;
         }
+
         file.close();
+
         matrix_ratios = standardize_matrix(matrix_ratios);
         matrix_ratios = (matrix_ratios.adjoint() * matrix_ratios) / double(matrix_ratios.rows() - 1);
         Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigensolver(matrix_ratios);
@@ -321,6 +328,7 @@ int main(int argc, char *argv[]) {
         std::ofstream projected_file("projected_data.txt");
         projected_file << projected_data << std::endl;
         projected_file.close();
+
         return 0;
     };
     if (fixed_param == "J") {

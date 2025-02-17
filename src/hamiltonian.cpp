@@ -1,5 +1,4 @@
 #include<vector>
-#include <iostream>
 #include<Eigen/Dense>
 #include<Eigen/SparseCore>
 
@@ -38,7 +37,7 @@ int BH::binomial(int n, int k) const{
 
 /* Calculate the dimension of the Hilbert space for n bosons on m sites */
 int BH::dimension(int m, int n) const{
-	return binomial(m + n - 1, m);
+	return binomial(m + n - 1, n);
 }
 
 
@@ -67,7 +66,6 @@ Eigen::MatrixXd BH::init_lexicographic(int m, int n) const {
     int col = 0;
     do {
         basis.col(col++) = state;
-		std::cout << "State: " << state.transpose() << std::endl << std::flush;
     } while (next_lexicographic(state, m, n));
     return basis;
 }
