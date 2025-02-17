@@ -79,9 +79,13 @@ plt.show()
 # Load the projected data for PCA
 projected_data = np.loadtxt('projected_data.txt')
 
-# Check if the data has at least two columns
-if projected_data.shape[1] < 2:
-    raise ValueError("Projected data must have at least two columns for plotting.")
+# Read the dispersion value
+with open('dispersion.txt', 'r') as f:
+    dispersion_line = f.readline()
+    dispersion = float(dispersion_line.split(':')[1].strip())
+
+# Read the cluster labels
+clusters = np.loadtxt('clusters.txt', dtype=int)
 
 # Extract the first two principal components
 pc1 = projected_data[:, 0]
@@ -89,12 +93,13 @@ pc2 = projected_data[:, 1]
 
 # Plot the PCA scatter plot
 plt.figure(figsize=(8, 6))
-plt.scatter(pc1, pc2, c='blue', marker='o', edgecolor='k', alpha=0.7)
-plt.title('Projection onto the First Two Principal Components \n \n', fontsize=12)
+scatter = plt.scatter(pc1, pc2, c=clusters, cmap='viridis', marker='o', edgecolor='k', alpha=0.7)
+plt.title(f'Projection onto the First Two Principal Components \n (The dispersion of the projected points equals: {dispersion:.4f}) \n \n', fontsize=12)
 plt.xlabel('Principal Component 1')
 plt.ylabel('Principal Component 2')
-plt.figtext(0.5, 0.9, 'Weak correlations in superfluid phase (projections appear to be randomly distributed) \n Strong correlations in Mott insulator phase (projections appear to be aligned)', ha='center', fontsize=9, color='red')
+plt.figtext(0.55, 0.87, 'Weak correlations in superfluid phase (projections appear to be randomly distributed) \n Strong correlations in Mott insulator phase (projections appear to be aligned)', ha='center', fontsize=9, color='red')
 plt.grid(True)
+plt.legend(*scatter.legend_elements(), title="Clusters")
 
 plt.tight_layout()
 plt.show()

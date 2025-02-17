@@ -7,7 +7,7 @@
 #include <Spectra/GenEigsSolver.h>
 #include <Spectra/MatOp/SparseGenMatProd.h>
 
-#include "operator.h"
+#include "operator.hpp"
 #include "Eigen/src/Core/Matrix.h"
 
 using namespace Spectra;

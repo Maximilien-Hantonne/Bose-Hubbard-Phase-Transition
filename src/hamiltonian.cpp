@@ -2,7 +2,7 @@
 #include<Eigen/Dense>
 #include<Eigen/SparseCore>
 
-#include "hamiltonian.h"
+#include "hamiltonian.hpp"
 
 
 /////  IMPLEMENTATION OF THE BH CLASS METHODS  /////

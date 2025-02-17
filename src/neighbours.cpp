@@ -2,7 +2,7 @@
 #include <stdexcept>
 #include <cmath>
 
-#include "neighbours.h"
+#include "neighbours.hpp"
 
 
 ///// IMPLEMENTATION OF THE NEIGHBOURS CLASS METHODS /////
