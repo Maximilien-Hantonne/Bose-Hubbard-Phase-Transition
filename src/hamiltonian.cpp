@@ -1,7 +1,7 @@
 #include<vector>
+#include <iostream>
 #include<Eigen/Dense>
 #include<Eigen/SparseCore>
-#include<vector>
 
 #include "hamiltonian.h"
 
@@ -61,14 +61,15 @@ bool BH::next_lexicographic(Eigen::VectorXd& state, int m, int n) const {
 
 /* Create the matrix that has the Fock states of the Hilbert space basis in columns */
 Eigen::MatrixXd BH::init_lexicographic(int m, int n) const {
-	Eigen::MatrixXd basis(m, D);
-	Eigen::VectorXd state = Eigen::VectorXd::Zero(m);
+    Eigen::MatrixXd basis(m, D);
+    Eigen::VectorXd state = Eigen::VectorXd::Zero(m);
     state(0) = n;
-	int col = 0;
-	do {
-		basis.col(col++) = state;
-	} while (next_lexicographic(state, m, n)) ;
-	return basis;
+    int col = 0;
+    do {
+        basis.col(col++) = state;
+		std::cout << "State: " << state.transpose() << std::endl << std::flush;
+    } while (next_lexicographic(state, m, n));
+    return basis;
 }
 
 
@@ -131,25 +132,26 @@ int BH::search_tag(const Eigen::VectorXd& tags, double x) const {
 
 /* Fill the hopping term of the Hamiltonian */
 void BH::fill_hopping(const Eigen::MatrixXd& basis, const Eigen::VectorXd& tags, const std::vector<std::vector<int>>& neighbours, const std::vector<int>& primes, Eigen::SparseMatrix<double>& hmatrix, double J) const {
-	std::vector<Eigen::Triplet<double>> tripletList;
-	tripletList.reserve(basis.cols() * basis.rows() * neighbours.size());
-	for (int k = 0; k < basis.cols(); k++) {
-		for (int i = 0; i < static_cast<int>(neighbours.size()); i++) {
-			for (int j = 0; j < static_cast<int>(neighbours[i].size()); j++) {
-				Eigen::VectorXd state = basis.col(k);
-				if (basis.coeff(i, k) >= 1 && basis.coeff(j, k) >= 1) {
-					state[i] += 1;
-					state[j] -= 1;
-					double x = calculate_tag(state, primes, i);
-					int index = search_tag(tags, x);
-					double value = sqrt((basis.coeff(i, k) + 1) * basis.coeff(j, k));
-					tripletList.push_back(Eigen::Triplet<double>(index, k, -J * value));
-					tripletList.push_back(Eigen::Triplet<double>(k, index, -J * value));
-				}
-			}
-		}
-	}
-	hmatrix.setFromTriplets(tripletList.begin(), tripletList.end());
+    std::vector<Eigen::Triplet<double>> tripletList;
+    tripletList.reserve(basis.cols() * basis.rows() * neighbours.size());
+    for (int k = 0; k < basis.cols(); k++) {
+        for (int i = 0; i < static_cast<int>(neighbours.size()); i++) {
+            for (int j = 0; j < static_cast<int>(neighbours[i].size()); j++) {
+                Eigen::VectorXd state = basis.col(k);
+                if (basis.coeff(i, k) >= 1 && basis.coeff(j, k) >= 1) {
+                    state[i] += 1;
+                    state[j] -= 1;
+                    double x = calculate_tag(state, primes, i);
+                    int index = search_tag(tags, x);
+                    assert(index >= 0 && index < tags.size()); // Add assertion to check index bounds
+                    double value = sqrt((basis.coeff(i, k) + 1) * basis.coeff(j, k));
+                    tripletList.push_back(Eigen::Triplet<double>(index, k, -J * value));
+                    tripletList.push_back(Eigen::Triplet<double>(k, index, -J * value));
+                }
+            }
+        }
+    }
+    hmatrix.setFromTriplets(tripletList.begin(), tripletList.end());
 }
 
 /* Fill the interaction term of the Hamiltonian */
@@ -198,7 +200,7 @@ void BH::fill_chemical(const Eigen::MatrixXd& basis, Eigen::SparseMatrix<double>
 
 /* Constructor for the Bose-Hubbard model */
 BH::BH(const std::vector<std::vector<int>>& neighbours, int m, int n, double J, double U, double mu) : neighbours(neighbours), m(m), n(n), D(dimension(m,n)), J(J), U(U), mu(mu), H(D,D) {
-    Eigen::MatrixXd basis = init_lexicographic(m, n);
+	Eigen::MatrixXd basis = init_lexicographic(m, n);
     H.setZero();
     if (J != 0) {
         std::vector<int> primes = { 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97 };

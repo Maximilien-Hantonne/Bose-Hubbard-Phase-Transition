@@ -1,14 +1,16 @@
+#include <set>
+#include <cmath>
+#include <vector>
+#include <chrono>
+#include <fstream>
+#include <iostream>
 #include <Eigen/Dense>
 #include <Eigen/SparseCore>
 #include <Eigen/Eigenvalues>
-#include <cmath>
-#include <fstream>
-#include <iostream>
-#include <vector>
-#include <chrono>
-#include <getopt.h>
+
 #include <sys/resource.h>
 #include <sys/sysinfo.h>
+#include <getopt.h>
 #include <omp.h>
 
 #include "hamiltonian.h"
@@ -218,7 +220,6 @@ int main(int argc, char *argv[]) {
 	neighbours.chain_neighbours(); // list of neighbours
 	const std::vector<std::vector<int>>& nei = neighbours.getNeighbours();
 
-
     // HAMILTONIAN INITIALIZATION
     timer();
     BH jmatrix(nei, m, n, 1, 0, 0);
@@ -266,6 +267,7 @@ int main(int argc, char *argv[]) {
             return 1;
         }
         file << fixed_value << std::endl;
+        int nb_eigen = 12;
         int num_param1 = static_cast<int>((param1_max - param1_min) / param1_step) + 1;
         int num_param2 = static_cast<int>((param2_max - param2_min) / param2_step) + 1;
         std::vector<double> param1_values(num_param1 * num_param2);
@@ -273,28 +275,38 @@ int main(int argc, char *argv[]) {
         std::vector<double> gap_ratios_values(num_param1 * num_param2);
         std::vector<double> boson_density_values(num_param1 * num_param2);
         std::vector<double> compressibility_values(num_param1 * num_param2);
-        Eigen::MatrixXd matrix_ratios(num_param1 * num_param2, H_fixed.gap_ratios().size());
-        #pragma omp parallel for collapse(2) schedule(dynamic)
-        for (int i = 0; i < num_param1; ++i) {
-            for (int j = 0; j < num_param2; ++j) {
-                double param1 = param1_min + i * param1_step;
-                double param2 = param2_min + j * param2_step;
-                Operator H = H_fixed + UH * param1 + uH * param2;
-                Eigen::VectorXd vec_ratios = H.gap_ratios();
-                double gap_ratio = vec_ratios.size() > 0 ? vec_ratios.sum() / vec_ratios.size() : 0.0;
-                double boson_density = 0;
-                double compressibility = 0;
-                int index = i * num_param2 + j;
-                #pragma omp critical
-                {
-                    param1_values[index] = param1;
-                    param2_values[index] = param2;
-                    gap_ratios_values[index] = gap_ratio;
-                    boson_density_values[index] = boson_density;
-                    compressibility_values[index] = compressibility;
-                    matrix_ratios.row(i * num_param2 + j) = vec_ratios;
+        int size = H_fixed.gap_ratios(nb_eigen).size();
+        Eigen::MatrixXd matrix_ratios(num_param1 * num_param2, size);
+        while (true) {
+            #pragma omp parallel for collapse(2) schedule(dynamic)
+            for (int i = 0; i < num_param1; ++i) {
+                for (int j = 0; j < num_param2; ++j) {
+                    double param1 = param1_min + i * param1_step;
+                    double param2 = param2_min + j * param2_step;
+                    Operator H = H_fixed + UH * param1 + uH * param2;
+                    Eigen::VectorXd vec_ratios = H.gap_ratios(nb_eigen);
+                    double gap_ratio = vec_ratios.size() > 0 ? vec_ratios.sum() / vec_ratios.size() : 0.0;
+                    double boson_density = 0;
+                    double compressibility = 0;
+                    int index = i * num_param2 + j;
+                    #pragma omp critical
+                    {
+                        param1_values[index] = param1;
+                        param2_values[index] = param2;
+                        gap_ratios_values[index] = gap_ratio;
+                        boson_density_values[index] = boson_density;
+                        compressibility_values[index] = compressibility;
+                        matrix_ratios.row(i * num_param2 + j) = vec_ratios;
+                    }
                 }
             }
+            std::set<double> unique_gap_ratios(gap_ratios_values.begin(), gap_ratios_values.end());
+            if (unique_gap_ratios.size() >= 5) {
+                break;
+            }
+            nb_eigen += 5;
+            size = size + 5;
+            matrix_ratios.resize(num_param1 * num_param2, size);  
         }
         for (int i = 0; i < num_param1 * num_param2; ++i) {
             file << param1_values[i] << " " << param2_values[i] << " " << gap_ratios_values[i] << " " << boson_density_values[i] << " " << compressibility_values[i] << std::endl;

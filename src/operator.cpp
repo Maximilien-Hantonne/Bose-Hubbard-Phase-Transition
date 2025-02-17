@@ -1,6 +1,6 @@
-#include <stdexcept>
 #include <cmath>
 #include <complex>
+#include <stdexcept>
 #include <Eigen/Dense>
 #include <Eigen/SparseCore>
 #include <Eigen/Eigenvalues>
@@ -177,16 +177,16 @@ Eigen::VectorXd Operator::exact_eigen(Eigen::MatrixXd& eigenvectors) const {
 // }
 
 /* Calculate the energy gap ratios of the system */
-Eigen::VectorXd Operator::gap_ratios() const {
+Eigen::VectorXd Operator::gap_ratios(int nb_eigen) const {
     Eigen::MatrixXcd eigenvectors;
-    int nb_eigen = std::min(15, D/2);
+    nb_eigen = std::min(nb_eigen, D / 2);
+    Eigen::VectorXd gap_ratios(nb_eigen - 2);
     auto eigenvalues = this->IRLM_eigen(nb_eigen, eigenvectors);
     std::vector<double> sorted_eigenvalues(nb_eigen);
     for (int i = 0; i < nb_eigen; ++i) {
         sorted_eigenvalues[i] = std::real(eigenvalues[i]);
     }
     std::sort(sorted_eigenvalues.begin(), sorted_eigenvalues.end());
-    Eigen::VectorXd gap_ratios(nb_eigen - 2);
     for (int i = 1; i < nb_eigen - 1; ++i) {
         double E_prev = sorted_eigenvalues[i - 1];
         double E_curr = sorted_eigenvalues[i];
@@ -194,13 +194,13 @@ Eigen::VectorXd Operator::gap_ratios() const {
         double min_gap = std::min(E_next - E_curr, E_curr - E_prev);
         double max_gap = std::max(E_next - E_curr, E_curr - E_prev);
         gap_ratios[i - 1] = (max_gap != 0) ? (min_gap / max_gap) : 0;
-    }
+        }
     return gap_ratios;
 }
 
 /* Calculate the average energy gap ratio of the system */
-double Operator::average_gap_ratio() const {
-    Eigen::VectorXd gap_ratios = this->gap_ratios();
+double Operator::average_gap_ratio(int nb_eigen) const {
+    Eigen::VectorXd gap_ratios = this->gap_ratios(nb_eigen);
     double sum = gap_ratios.sum();
     int count = gap_ratios.size();
     return count > 0 ? sum / count : 0.0;

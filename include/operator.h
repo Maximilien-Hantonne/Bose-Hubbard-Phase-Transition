@@ -142,14 +142,14 @@ public:
     *
     * @return Eigen::VectorXd The vector of energy gap ratios.
     */
-    Eigen::VectorXd gap_ratios() const;
+    Eigen::VectorXd gap_ratios(int nb_eigen) const;
 
     /**
      * @brief Calculate the average energy gap ratio of the system.
      *
      * @return double The average energy gap ratio.
      */
-    double average_gap_ratio() const;
+    double average_gap_ratio(int nb_eigen) const;
 
     /** 
     * @brief Add a potential term to the operator.

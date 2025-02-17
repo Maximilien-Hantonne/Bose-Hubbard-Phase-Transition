@@ -90,9 +90,10 @@ pc2 = projected_data[:, 1]
 # Plot the PCA scatter plot
 plt.figure(figsize=(8, 6))
 plt.scatter(pc1, pc2, c='blue', marker='o', edgecolor='k', alpha=0.7)
-plt.title('Projection onto the First Two Principal Components', fontsize=12)
+plt.title('Projection onto the First Two Principal Components \n \n', fontsize=12)
 plt.xlabel('Principal Component 1')
 plt.ylabel('Principal Component 2')
+plt.figtext(0.5, 0.9, 'Weak correlations in superfluid phase (projections appear to be randomly distributed) \n Strong correlations in Mott insulator phase (projections appear to be aligned)', ha='center', fontsize=9, color='red')
 plt.grid(True)
 
 plt.tight_layout()
