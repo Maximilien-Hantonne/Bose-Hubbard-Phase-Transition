@@ -93,6 +93,19 @@ public:
     */
     BH(const std::vector<std::vector<int>>& neighbours, int m_, int n_, double J_, double U_, double mu_);
 
+    /**
+    * @brief Create the Hamiltonian matrix for the Bose-Hubbard model.
+    *
+    * @param neighbours Vector that contains the neighbours of each site of the lattice.
+    * @param m Number of sites in the lattice.
+    * @param n The maximum number of bosons in the lattice.
+    * @param J Hopping parameter of the BH model.
+    * @param U Interaction parameter of the BH model.
+    * @param mu Chemical potential of the BH model.
+    * @return Eigen::SparseMatrix<double> The Hamiltonian matrix.
+    */
+    static Eigen::SparseMatrix<double> create_combined_hamiltonian(const std::vector<std::vector<int>>& neighbours, int m, int n, double J, double U, double mu);
+
 // UTILITY FUNCTIONS
 
     /**

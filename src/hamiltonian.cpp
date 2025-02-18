@@ -215,6 +215,31 @@ BH::BH(const std::vector<std::vector<int>>& neighbours, int m, int n, double J, 
 }
 
 
+Eigen::SparseMatrix<double> BH::create_combined_hamiltonian(const std::vector<std::vector<int>>& neighbours, int m, int n, double J, double U, double mu) {
+    int total_dimension = 0;
+    std::vector<Eigen::SparseMatrix<double>> hamiltonians;
+    for (int bosons = 1; bosons <= n; ++bosons) {
+        BH hamiltonian(neighbours, m, bosons, J, U, mu);
+        Eigen::SparseMatrix<double> hmatrix = hamiltonian.getHamiltonian();
+        hamiltonians.push_back(hmatrix);
+        total_dimension += hmatrix.rows();
+    }
+    Eigen::SparseMatrix<double> combined_hamiltonian(total_dimension, total_dimension);
+    std::vector<Eigen::Triplet<double>> tripletList;
+    int offset = 0;
+    for (const auto& hmatrix : hamiltonians) {
+        for (int k = 0; k < hmatrix.outerSize(); ++k) {
+            for (Eigen::SparseMatrix<double>::InnerIterator it(hmatrix, k); it; ++it) {
+                tripletList.push_back(Eigen::Triplet<double>(it.row() + offset, it.col() + offset, it.value()));
+            }
+        }
+        offset += hmatrix.rows();
+    }
+    combined_hamiltonian.setFromTriplets(tripletList.begin(), tripletList.end());
+    return combined_hamiltonian;
+}
+
+
     /* UTILITY FUNCTIONS */
 
 /* get the Hamiltonian matrix */

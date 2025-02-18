@@ -132,16 +132,13 @@ int main(int argc, char *argv[]) {
 
 
     // HAMILTONIAN INITIALIZATION
-    BH jmatrix(nei, m, n, 1, 0, 0);
-    Eigen::SparseMatrix<double> jsmatrix = jmatrix.getHamiltonian();
+    Eigen::SparseMatrix<double> jsmatrix = BH::create_combined_hamiltonian(nei, m, n, 1, 0, 0);
     Operator JH(std::move(jsmatrix));
     
-    BH Umatrix(nei, m, n, 0, 1, 0);
-    Eigen::SparseMatrix<double> Usmatrix = Umatrix.getHamiltonian();
+    Eigen::SparseMatrix<double> Usmatrix = BH::create_combined_hamiltonian(nei, m, n, 0, 1, 0);
     Operator UH(std::move(Usmatrix));
 
-    BH umatrix(nei, m, n, 0, 0, 1);
-    Eigen::SparseMatrix<double> usmatrix = umatrix.getHamiltonian();
+    Eigen::SparseMatrix<double> usmatrix = BH::create_combined_hamiltonian(nei, m, n, 0, 0, 1);
     Operator uH(std::move(usmatrix));
     
     

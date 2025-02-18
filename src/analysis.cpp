@@ -29,7 +29,7 @@ void Analysis::calculate_and_save(std::string fixed_param, double fixed_value, d
     std::vector<double> compressibility_values(num_param1 * num_param2);
     int size = H_fixed.gap_ratios(nb_eigen).size();
     Eigen::MatrixXd matrix_ratios(num_param1 * num_param2, size);
-    double variance_threshold_percent = 1e-5;
+    double variance_threshold_percent = 1e-9;
 
     while (true) {
         #pragma omp parallel for collapse(2) schedule(dynamic)
