@@ -10,7 +10,7 @@ This repository contains the implementation of the Bose-Hubbard model, which des
   - `hamiltonian.h`: Defines the `BH` class representing the Bose-Hubbard Hamiltonian.
   - `neighbours.h`: Defines the `Neighbours` class for generating the list of neighbours for different lattice structures.
   - `operator.h`: Defines the `Operator` class for various matrix operations and diagonalization methods.
-  - `analysis.h`: Defines the `Analysis` class for calculating and saving characteristics quantities and performing a PCA on it with dispersion calculation and k-means clustering.
+  - `analysis.h`: Defines the `Analysis` class for calculating and saving physical quantities with an exact or a mean field approach.
   - `resource.h`: Defines the `Resource` class for utility functions for timing, memory usage and parallelization.
 
 - `src/`: Contains the source files for the project.
@@ -24,9 +24,10 @@ This repository contains the implementation of the Bose-Hubbard model, which des
 
 - [Eigen](https://eigen.tuxfamily.org/dox/GettingStarted.html): A C++ template library for linear algebra.
 - [Spectra](https://spectralib.org/): A header-only C++ library for large scale eigenvalue problems.
-- [Doxygen](http://www.doxygen.nl/): A tool for generating documentation from annotated C++ sources.
 - [TkInter](https://docs.python.org/3/library/tkinter.html): A standard GUI toolkit for Python (required for viewing plots).
 - [OpenMP](https://www.openmp.org/): An API for parallel programming in C, C++, and Fortran.
+- [tqdm](https://github.com/tqdm/tqdm.cpp): A header-only C++ port of the popular python module tqdm.
+- (Optional) [Doxygen](http://www.doxygen.nl/): A tool for generating documentation from annotated C++ sources.
   
 ## Building the Project (Linux)
 
@@ -123,6 +124,7 @@ Command-line options:
 - `-r, --range`: Range for chemical potential and interaction.
 - `-s, --step`: Step for chemical potential and interaction.
 - `-f, --fixed`: Fixed parameter (J, U, or u)
+- `-t, --type` : type of calculation (exact or mean)
 - `-h, --help`: Display usage information.
 
 ### Viewing Plots (Linux)
@@ -134,7 +136,7 @@ The `plot.py` script will generate plots for the gap ratio, boson density, and c
 
 Make sure you have the required dependencies installed. You can then launch the program by typing for example :
 ```sh
-./QuantumProject -m 5 -n 5 -J 100 -U 0 -u 0 -r 100 -s 5 -f "J"
+./QuantumProject -m 5 -n 5 -J 100 -U 0 -u 0 -r 100 -s 5 -f "J" --t "exact"
 ```
 
 ## Authors

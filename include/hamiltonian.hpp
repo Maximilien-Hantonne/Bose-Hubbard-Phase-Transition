@@ -106,6 +106,18 @@ public:
     */
     static Eigen::SparseMatrix<double> create_combined_hamiltonian(const std::vector<std::vector<int>>& neighbours, int m, int n, double J, double U, double mu);
 
+    /**
+    * @brief Create the mean-field Hamiltonian.
+    *
+    * @param psi Mean-field parameter.
+    * @param p Number of bosons.
+    * @param mu Chemical potential.
+    * @param J Hopping parameter.
+    * @param q Coordination number.
+    * @param h Matrix to store the Hamiltonian.
+    */
+    static void h_MF(double psi, int p, double mu, double J, int q, Eigen::MatrixXd& h);
+
 // UTILITY FUNCTIONS
 
     /**

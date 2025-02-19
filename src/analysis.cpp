@@ -6,12 +6,184 @@
 #include <numeric>
 #include <iostream>
 
+#include <Eigen/Dense>
+#include <Eigen/SparseCore>
+#include <Eigen/Eigenvalues>
+
+#include <Spectra/SymEigsSolver.h>
+#include <Spectra/MatOp/DenseSymMatProd.h>
+
 #include "operator.hpp"
 #include "analysis.hpp"
+#include "hamiltonian.hpp"
+#include "resource.hpp"
+#include "neighbours.hpp"
+#include "tqdm.h"
+
+
+// MEAN-FIELD CALCULATIONS
+
+/* Main function for the mean-field calculations */
+void Analysis::mean_field_parameters(int n, double J, double mu, double r){
+
+    double J_min = J; 
+    double J_max = J + r;
+    double dJ = (J_max - J_min) / n;
+    double mu_min = mu;
+    double mu_max = mu + r;
+    double dmu = (mu_max - mu_min) / n;
+    double q = 1;
+
+    std::random_device rd; // Seed generator
+    std::mt19937 gen(rd()); // Mersenne Twister generator
+    std::uniform_real_distribution<> dis(0.0, 1.0); // Uniform distribution in [0, 1]
+
+    std::ofstream file("mean_field.txt"); 
+
+    Resource::timer(); // start the timer
+    for (double mu : tqdm::range(mu_min, mu_max, dmu)) {
+        for (double J : tqdm::range(J_min, J_max, dJ)) {
+            double psi0 = dis(gen); 
+            file << mu << " " << J << " " << SCMF(mu, J, q, psi0) << std::endl;
+        }
+    }
+    Resource::timer(); // stop the timer
+    Resource::get_memory_usage(true); // get the memory usage
+
+    file.close();
+}
+
+
+/* calculate the mean value of the annihilation operator <phi0|a|phi0> */
+double Analysis::SF_density(Eigen::VectorXd& phi0, int p)
+/* Returns the mean value of the annihilation operator <phi0|a|phi0>, that is the superfluid density of the state phi0 */
+{
+
+    double a = 0; 
+    for(int i=1; i<2*p+1; i++)
+    {
+        a += sqrt(i)*phi0[i]*phi0[i-1];
+    }
+    return a; 
+}
+
+/* Self-consistent mean-field method to highlight the Superfluid-Mott insulator transition
+Parameters: 
+- mu = mu/U (without dimension)
+- J = J/U 
+- q : number of neighbours of a site i in the specific lattice studied
+- psi0: initial ansatz for the superfluid order parameter */
+double Analysis::SCMF(double mu, double J, int q ,double psi0)
+{
+    double psi = psi0; // initial ansatz for the superfluid order parameter
+    double psi_new = psi0; // new ansatz for the superfluid order parameter
+    Eigen::VectorXd phi0; // GS eigenvector
+    double e0; // ground state energy
+    double e0_new; // new ground state energy
+    double tmp = 0; //temporary variable
+    int N_itt=1; 
+    int N_itt_inner; // number of iterations
+    int p; 
+    double eps = 1e-6; // precision of the convergence
+
+    Eigen::MatrixXd h(1000, 1000); // alllocation of a huge dense matrix, in which we will store the iterative
+                                   // single particle hamiltonian in the mean-field approximation
+    h.setZero();
+
+    // std::cout << "*** Computing the superfluid order parameter Psi up to " << eps << " precision ***" << std::endl; 
+    do
+    {
+        // std::cout << "*** Inner Loop: Computing the ground state e0 and phi0 up to " << eps << " precision ***" << std::endl;
+        N_itt_inner = 0; 
+        p = 1; 
+        BH::h_MF(psi, p, mu, J, q, h); // single particle hamiltonian in the mean-field approximation
+        // Define a submatrix view of the matrix h; without allocating new memory 
+        Eigen::Block<Eigen::MatrixXd> sub_h = h.block(0, 0, 2*p+1, 2*p+1);
+        Spectra::DenseSymMatProd<double> op(sub_h); 
+        Spectra::SymEigsSolver<Spectra::DenseSymMatProd<double>> eigs(op, 1, 2*p);
+        eigs.init();
+        int nconv = eigs.compute(Spectra::SortRule::SmallestAlge);
+        if (eigs.info() != Spectra::CompInfo::Successful) { // verify if the eigen search is a success
+            // throw std::runtime_error("Eigenvalue computation for the mean-field single particle hamiltonian failed.");
+            return -1.0;
+        }
+        else{
+            phi0 = eigs.eigenvectors().col(0); // GS eigenvector
+            e0 = eigs.eigenvalues()[0]; // GS eigenvalue 
+        }
+        
+        do
+        {
+            p++; 
+            BH::h_MF(psi, p, mu, J, q, h); // single particle hamiltonian in the mean-field approximation
+            Eigen::Block<Eigen::MatrixXd> sub_h = h.block(0, 0, 2*p+1, 2*p+1);
+            Spectra::DenseSymMatProd<double> op(sub_h); 
+            Spectra::SymEigsSolver<Spectra::DenseSymMatProd<double>> eigs(op, 1, 2*p);
+            eigs.init();
+            int nconv = eigs.compute(Spectra::SortRule::SmallestAlge);
+            if (eigs.info() != Spectra::CompInfo::Successful) { // verify if the eigen search is a success
+                throw std::runtime_error("Eigenvalue computation for the mean-field single particle hamiltonian failed.");
+            }
+            else{
+                phi0 = eigs.eigenvectors().col(0); // GS eigenvector
+                e0_new = eigs.eigenvalues()[0]; // GS eigenvalue 
+            }
+            N_itt_inner++; 
+            tmp = std::abs(e0-e0_new);
+            e0 = e0_new;
+        }while(tmp>eps);
+
+        N_itt++; 
+        psi_new = SF_density(phi0, p); // new ansatz for the superfluid order parameter
+        tmp = std::abs(psi_new - psi);
+        psi = psi_new;
+    }while(tmp>eps);
+    
+    return psi;
+}
 
 
 
-/* calculate and save the phase transition parameters */
+
+// EXACT CALCULATIONS
+
+/*main function for exact calculations parameters*/
+void Analysis::exact_parameters(int m, int n, double J,double U, double mu, double s, double r, std::string fixed_param) {
+    Resource::timer();
+
+    Neighbours neighbours(m);
+    neighbours.chain_neighbours();
+    const std::vector<std::vector<int>>& nei = neighbours.getNeighbours();
+
+    Eigen::SparseMatrix<double> jsmatrix = BH::create_combined_hamiltonian(nei, m, n, 1, 0, 0);
+    Operator JH(std::move(jsmatrix));
+    Eigen::SparseMatrix<double> Usmatrix = BH::create_combined_hamiltonian(nei, m, n, 0, 1, 0);
+    Operator UH(std::move(Usmatrix));
+    Eigen::SparseMatrix<double> usmatrix = BH::create_combined_hamiltonian(nei, m, n, 0, 0, 1);
+    Operator uH(std::move(usmatrix));
+
+    Resource::set_omp_threads(jsmatrix, 3);
+
+    double J_min = J, J_max = J + r, mu_min = mu, mu_max = mu + r, U_min = U, U_max = U + r;
+
+    if (fixed_param == "J") {
+        JH = JH * J;
+        calculate_and_save(fixed_param, J, U_min, U_max, mu_min, mu_max, s,s, JH, UH, uH);
+    }
+    else if (fixed_param == "U") {
+        UH = UH * U;
+        calculate_and_save(fixed_param, U, J_min, J_max, mu_min, mu_max, s,s, UH, JH, uH);
+    }
+    else{
+        uH = uH * mu;
+        calculate_and_save(fixed_param, mu, J_min, J_max, U_min, U_max, s,s, uH, JH, UH);
+    }
+    Resource::timer();
+    Resource::get_memory_usage(true);
+}
+
+
+/* calculate and save gap ratio and other quantities */
 void Analysis::calculate_and_save(std::string fixed_param, double fixed_value, double param1_min, double param1_max, double param2_min, double param2_max, double param1_step, double param2_step, Operator& H_fixed, Operator& H1, Operator& H2) {
     std::ofstream file("phase.txt");
         file << fixed_param << " ";
@@ -106,6 +278,9 @@ void Analysis::calculate_and_save(std::string fixed_param, double fixed_value, d
     }
 
 
+
+// SPATIAL ANALYSIS 
+
 /* calculate the dispersion of the projected points */
 double Analysis::calculate_dispersion(const Eigen::MatrixXd& projected_data) {
     Eigen::VectorXd mean = projected_data.colwise().mean();
@@ -114,7 +289,6 @@ double Analysis::calculate_dispersion(const Eigen::MatrixXd& projected_data) {
     double dispersion = variances.sum();
     return dispersion;
 }
-
 
 /* k-means clustering */
 Eigen::VectorXi Analysis::kmeans_clustering(const Eigen::MatrixXd& data, int num_clusters) {
@@ -170,6 +344,9 @@ Eigen::VectorXi Analysis::kmeans_clustering(const Eigen::MatrixXd& data, int num
     return labels;
 }
 
+
+
+// UTILITY FUNCTIONS
 
 /* standardize a matrix */
 Eigen::MatrixXd Analysis::standardize_matrix(const Eigen::MatrixXd& matrix) {

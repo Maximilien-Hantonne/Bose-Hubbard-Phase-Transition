@@ -215,6 +215,9 @@ BH::BH(const std::vector<std::vector<int>>& neighbours, int m, int n, double J, 
 }
 
 
+	/* STATIC FUNCTIONS */
+
+/* Create the Hamiltonian with Fock states from 1 to n bosons */
 Eigen::SparseMatrix<double> BH::create_combined_hamiltonian(const std::vector<std::vector<int>>& neighbours, int m, int n, double J, double U, double mu) {
     int total_dimension = 0;
     std::vector<Eigen::SparseMatrix<double>> hamiltonians;
@@ -239,6 +242,27 @@ Eigen::SparseMatrix<double> BH::create_combined_hamiltonian(const std::vector<st
     return combined_hamiltonian;
 }
 
+/* Create the mean-field Hamiltonian */
+void BH::h_MF (double psi, int p, double mu, double J, int q, Eigen::MatrixXd& h){
+    // fill diagonal elements
+    for (int i=0; i<2*p+1; i++)
+    {
+        h(i,i) = -mu*i + 0.5*i*(i-1) + q*J*psi*psi;
+    }
+
+    // fill off-diagonal elements
+    for (int j=0; j<2*p+1; j++)
+    {
+        if (j == 0) {
+            h(1, 0) = -q * J * psi * sqrt(1);
+        } else if (j == 2 * p) {
+            h(2 * p - 1, 2 * p) = -q * J * psi * sqrt(2 * p);
+        } else {
+            h(j + 1, j) = -q * J * psi * sqrt(j + 1);
+            h(j - 1, j) = -q * J * psi * sqrt(j);
+        }
+    }
+}
 
     /* UTILITY FUNCTIONS */
 

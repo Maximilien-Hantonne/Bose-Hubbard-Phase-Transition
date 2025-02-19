@@ -45,7 +45,7 @@ def wrap_title(title, width=30):
     return "\n".join(textwrap.wrap(title, width))
 
 # Plot the heatmap for gap ratio
-plt.figure(figsize=(18, 6))  # Increase the figure size
+plt.figure(figsize=(18, 6))
 
 plt.subplot(1, 3, 1)
 contour1 = plt.contourf(x_grid, y_grid, gap_ratio.reshape(len(y_unique), len(x_unique)), levels=50, cmap='viridis')
@@ -75,6 +75,7 @@ plt.title(wrap_title('Compressibility with respect to {} and {}'.format(x_label,
 
 plt.tight_layout()
 plt.show()
+plt.close()
 
 # Load the projected data for PCA
 projected_data = np.loadtxt('projected_data.txt')
@@ -103,3 +104,4 @@ plt.legend(*scatter.legend_elements(), title="Clusters")
 
 plt.tight_layout()
 plt.show()
+plt.close()
