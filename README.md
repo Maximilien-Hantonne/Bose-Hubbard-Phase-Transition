@@ -137,7 +137,9 @@ sudo apt-get install python3-tk
 
 The `plot.py` script will generate plots for the gap ratio, boson density, and compressibility and then the projection of the PCA on the data and visualize the projected points along with their k-means clustering labels.
 
-The `plot_mean_field.py` will generate the map of the order parameter to visualize the transition Mott insulator/superfluid
+The `plot_mean_field.py` will generate the map of the order parameter to visualize the transition Mott insulator/superfluid. 
+
+Some already calculated plots can be seen in the [figures](https://github.com/Maximilien-Hantonne/Bose-Hubbard-Phase-Transition/tree/main/figures) folder.
 
 ### Launching the program (Linux)
 Make sure you have the required dependencies installed. You can then launch the program by typing for example :
