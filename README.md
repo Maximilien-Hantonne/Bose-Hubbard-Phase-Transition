@@ -20,6 +20,8 @@ This repository contains the implementation of the Bose-Hubbard model, which des
 
 - `CMakeLists.txt`: CMake configuration file for building the project.
 
+- `figures/`: Directory to store the generated plots.
+
 ## Dependencies
 
 - [Eigen](https://eigen.tuxfamily.org/dox/GettingStarted.html): A C++ template library for linear algebra.
