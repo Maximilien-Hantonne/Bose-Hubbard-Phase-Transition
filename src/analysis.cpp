@@ -2,6 +2,7 @@
 #include <vector>
 #include <random>
 #include <limits>
+#include <complex>
 #include <fstream>
 #include <numeric>
 #include <iostream>
@@ -21,7 +22,11 @@
 #include "tqdm.h"
 
 
-// MEAN-FIELD CALCULATIONS
+
+
+
+                   ////// MEAN-FIELD CALCULATIONS /////
+
 
 /* Main function for the mean-field calculations */
 void Analysis::mean_field_parameters(int n, double J, double mu, double r){
@@ -41,12 +46,14 @@ void Analysis::mean_field_parameters(int n, double J, double mu, double r){
     std::ofstream file("mean_field.txt"); 
 
     Resource::timer(); // start the timer
+
     for (double mu : tqdm::range(mu_min, mu_max, dmu)) {
         for (double J : tqdm::range(J_min, J_max, dJ)) {
             double psi0 = dis(gen); 
             file << mu << " " << J << " " << SCMF(mu, J, q, psi0) << std::endl;
         }
     }
+    
     Resource::timer(); // stop the timer
     Resource::get_memory_usage(true); // get the memory usage
 
@@ -102,7 +109,7 @@ double Analysis::SCMF(double mu, double J, int q ,double psi0)
         Spectra::DenseSymMatProd<double> op(sub_h); 
         Spectra::SymEigsSolver<Spectra::DenseSymMatProd<double>> eigs(op, 1, 2*p);
         eigs.init();
-        int nconv = eigs.compute(Spectra::SortRule::SmallestAlge);
+        [[maybe_unused]] int nconv = eigs.compute(Spectra::SortRule::SmallestAlge);
         if (eigs.info() != Spectra::CompInfo::Successful) { // verify if the eigen search is a success
             // throw std::runtime_error("Eigenvalue computation for the mean-field single particle hamiltonian failed.");
             return -1.0;
@@ -120,7 +127,7 @@ double Analysis::SCMF(double mu, double J, int q ,double psi0)
             Spectra::DenseSymMatProd<double> op(sub_h); 
             Spectra::SymEigsSolver<Spectra::DenseSymMatProd<double>> eigs(op, 1, 2*p);
             eigs.init();
-            int nconv = eigs.compute(Spectra::SortRule::SmallestAlge);
+            [[maybe_unused]] int nconv = eigs.compute(Spectra::SortRule::SmallestAlge);
             if (eigs.info() != Spectra::CompInfo::Successful) { // verify if the eigen search is a success
                 throw std::runtime_error("Eigenvalue computation for the mean-field single particle hamiltonian failed.");
             }
@@ -145,7 +152,11 @@ double Analysis::SCMF(double mu, double J, int q ,double psi0)
 
 
 
-// EXACT CALCULATIONS
+
+                    ///// EXACT CALCULATIONS /////
+
+
+        /* MAIN FUNCTIONS */
 
 /*main function for exact calculations parameters*/
 void Analysis::exact_parameters(int m, int n, double J,double U, double mu, double s, double r, std::string fixed_param) {
@@ -155,14 +166,11 @@ void Analysis::exact_parameters(int m, int n, double J,double U, double mu, doub
     neighbours.chain_neighbours();
     const std::vector<std::vector<int>>& nei = neighbours.getNeighbours();
 
-    Eigen::SparseMatrix<double> jsmatrix = BH::create_combined_hamiltonian(nei, m, n, 1, 0, 0);
-    Operator JH(std::move(jsmatrix));
-    Eigen::SparseMatrix<double> Usmatrix = BH::create_combined_hamiltonian(nei, m, n, 0, 1, 0);
-    Operator UH(std::move(Usmatrix));
-    Eigen::SparseMatrix<double> usmatrix = BH::create_combined_hamiltonian(nei, m, n, 0, 0, 1);
-    Operator uH(std::move(usmatrix));
+    Eigen::SparseMatrix<double> JH = BH::create_combined_hamiltonian(nei, m, n, 1, 0, 0);
+    Eigen::SparseMatrix<double> UH = BH::create_combined_hamiltonian(nei, m, n, 0, 1, 0);
+    Eigen::SparseMatrix<double> uH = BH::create_combined_hamiltonian(nei, m, n, 0, 0, 1);
 
-    Resource::set_omp_threads(jsmatrix, 3);
+    Resource::set_omp_threads(JH, 3);
 
     double J_min = J, J_max = J + r, mu_min = mu, mu_max = mu + r, U_min = U, U_max = U + r;
 
@@ -184,7 +192,7 @@ void Analysis::exact_parameters(int m, int n, double J,double U, double mu, doub
 
 
 /* calculate and save gap ratio and other quantities */
-void Analysis::calculate_and_save(std::string fixed_param, double fixed_value, double param1_min, double param1_max, double param2_min, double param2_max, double param1_step, double param2_step, Operator& H_fixed, Operator& H1, Operator& H2) {
+void Analysis::calculate_and_save(std::string fixed_param, double fixed_value, double param1_min, double param1_max, double param2_min, double param2_max, double param1_step, double param2_step, Eigen::SparseMatrix<double> H_fixed, Eigen::SparseMatrix<double> H1, Eigen::SparseMatrix<double> H2) {
     std::ofstream file("phase.txt");
         file << fixed_param << " ";
         if (fixed_value == 0) {
@@ -199,8 +207,8 @@ void Analysis::calculate_and_save(std::string fixed_param, double fixed_value, d
     std::vector<double> gap_ratios_values(num_param1 * num_param2);
     std::vector<double> boson_density_values(num_param1 * num_param2);
     std::vector<double> compressibility_values(num_param1 * num_param2);
-    int size = H_fixed.gap_ratios(nb_eigen).size();
-    Eigen::MatrixXd matrix_ratios(num_param1 * num_param2, size);
+    Eigen::MatrixXcd eigenvectors;
+    Eigen::MatrixXd matrix_ratios(num_param1 * num_param2, nb_eigen -2);
     double variance_threshold_percent = 1e-9;
 
     while (true) {
@@ -209,11 +217,15 @@ void Analysis::calculate_and_save(std::string fixed_param, double fixed_value, d
             for (int j = 0; j < num_param2; ++j) {
                 double param1 = param1_min + i * param1_step;
                 double param2 = param2_min + j * param2_step;
-                Operator H = H_fixed + H1 * param1 + H2 * param2;
-                Eigen::VectorXd vec_ratios = H.gap_ratios(nb_eigen);
+                Eigen::SparseMatrix<double> H = H_fixed + H1 * param1 + H2 * param2;
+                Eigen::VectorXcd eigenvalues = Operator::IRLM_eigen(H, nb_eigen, eigenvectors);
+                Eigen::VectorXd vec_ratios = gap_ratios(eigenvalues, nb_eigen);
                 double gap_ratio = vec_ratios.size() > 0 ? vec_ratios.sum() / vec_ratios.size() : 0.0;
-                double boson_density = 0;
-                double compressibility = 0;
+                // Eigen::MatrixXcd spdm = SPDM(eigenvectors, nb_eigen);
+                // double density = std::real(spdm.trace());
+                // double K = compressibility(spdm);
+                double density = 0;
+                double K = 0;
                 int index = i * num_param2 + j;
                 
                 #pragma omp critical
@@ -221,8 +233,8 @@ void Analysis::calculate_and_save(std::string fixed_param, double fixed_value, d
                     param1_values[index] = param1;
                     param2_values[index] = param2;
                     gap_ratios_values[index] = gap_ratio;
-                    boson_density_values[index] = boson_density;
-                    compressibility_values[index] = compressibility;
+                    boson_density_values[index] = density;
+                    compressibility_values[index] = K;
                     matrix_ratios.row(i * num_param2 + j) = vec_ratios;
                 }
             }
@@ -239,8 +251,7 @@ void Analysis::calculate_and_save(std::string fixed_param, double fixed_value, d
         }
 
         nb_eigen += 5;
-        size = size + 5;
-        matrix_ratios.resize(num_param1 * num_param2, size);  
+        matrix_ratios.resize(num_param1 * num_param2, nb_eigen - 2);  
     }
 
     for (int i = 0; i < num_param1 * num_param2; ++i) {
@@ -253,9 +264,8 @@ void Analysis::calculate_and_save(std::string fixed_param, double fixed_value, d
     matrix_ratios = standardize_matrix(matrix_ratios);
     matrix_ratios = (matrix_ratios.adjoint() * matrix_ratios) / double(matrix_ratios.rows() - 1);
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigensolver(matrix_ratios);
-    Eigen::VectorXd eigenvalues = eigensolver.eigenvalues().real().reverse();
-    Eigen::MatrixXd eigenvectors = eigensolver.eigenvectors().real().rowwise().reverse();
-    Eigen::MatrixXd projected_data = matrix_ratios * eigenvectors.leftCols(2);
+    Eigen::MatrixXd eigenvectors2 = eigensolver.eigenvectors().real().rowwise().reverse();
+    Eigen::MatrixXd projected_data = matrix_ratios * eigenvectors2.leftCols(2);
     std::ofstream projected_file("projected_data.txt");
     projected_file << projected_data << std::endl;
     projected_file.close();
@@ -278,8 +288,90 @@ void Analysis::calculate_and_save(std::string fixed_param, double fixed_value, d
     }
 
 
+        /* GAP RATIOS */
 
-// SPATIAL ANALYSIS 
+/* Calculate the energy gap ratios of the system */
+Eigen::VectorXd Analysis::gap_ratios(Eigen::VectorXcd eigenvalues,int nb_eigen) {
+    Eigen::VectorXd gap_ratios(nb_eigen - 2);
+    std::vector<double> sorted_eigenvalues(nb_eigen);
+    for (int i = 0; i < nb_eigen; ++i) {
+        sorted_eigenvalues[i] = std::real(eigenvalues[i]);
+    }
+    std::sort(sorted_eigenvalues.begin(), sorted_eigenvalues.end());
+    for (int i = 1; i < nb_eigen - 1; ++i) {
+        double E_prev = sorted_eigenvalues[i - 1];
+        double E_curr = sorted_eigenvalues[i];
+        double E_next = sorted_eigenvalues[i + 1];
+        double min_gap = std::min(E_next - E_curr, E_curr - E_prev);
+        double max_gap = std::max(E_next - E_curr, E_curr - E_prev);
+        gap_ratios[i - 1] = (max_gap != 0) ? (min_gap / max_gap) : 0;
+        }
+    return gap_ratios;
+}
+
+
+        /* THERMODYNAMIC FUNCTIONS */
+
+/* Calculate the partition function of the system */
+double Analysis::partition_function(Eigen::VectorXcd eigenvalues, double beta) {
+    double Z = 0;
+    for (int i = 0; i < eigenvalues.size(); ++i) {
+        Z += exp(-beta * std::real(eigenvalues[i]));
+    }
+    return Z;
+}
+
+/* Calculate the probability of the system being in a given state in the grand canonical ensemble */
+Eigen::VectorXd Analysis::probability(Eigen::VectorXcd eigenvalues, double beta, double mu) {
+    double Z = partition_function(eigenvalues, beta);
+    Eigen::VectorXd prob = Eigen::VectorXd::Zero(eigenvalues.size());
+    for (int i = 0; i < eigenvalues.size(); ++i) {
+        prob[i] = exp(-beta * (std::real(eigenvalues[i])-mu)) / Z;
+    }
+    return prob;
+}
+
+/* Calculate the single-particle density matrix of the system */
+Eigen::MatrixXcd Analysis::SPDM(const Eigen::MatrixXcd& eigenvectors, int nb_eigen) {
+    Eigen::MatrixXcd spdm = Eigen::MatrixXcd::Zero(nb_eigen, nb_eigen);
+    for (int i = 0; i < nb_eigen; ++i) {
+        for (int j = i; j < nb_eigen; ++j) {
+            spdm(i, j) = braket(eigenvectors, i, j);
+        }
+        for (int j = 0; j < i; ++j) {
+            spdm(i, j) = std::conj(spdm(j, i));
+        }
+    }
+    return spdm;
+}
+
+/* Calculate the compressibility of the system */
+double Analysis::compressibility(const Eigen::MatrixXcd& spdm) {
+    double K = 0;
+    for (int i = 0; i < spdm.rows(); ++i) {
+        for (int j = 0; j < spdm.cols(); ++j) {
+            K += std::real(spdm(i, j) * spdm(j, i));
+        }
+    }
+    return K - std::real(spdm.trace()) * std::real(spdm.trace());
+}
+
+
+        /* MEAN VALUE CALCULATIONS */
+
+/* Calculate the mean value of the annihilation operator <n|ai+ aj|n> */
+std::complex<double> Analysis::braket(const Eigen::MatrixXcd& eigenvectors, int i, int j) {
+    double braket_value = 0;
+    std::cout << "Not implemented yet" << std::endl;
+    return braket_value;
+}
+
+
+
+                    ///// UTILITY FUNCTIONS /////
+
+
+        /* PCA FUNCTIONS */
 
 /* calculate the dispersion of the projected points */
 double Analysis::calculate_dispersion(const Eigen::MatrixXd& projected_data) {
@@ -345,8 +437,7 @@ Eigen::VectorXi Analysis::kmeans_clustering(const Eigen::MatrixXd& data, int num
 }
 
 
-
-// UTILITY FUNCTIONS
+        /* STANDARDIZE MATRIX */
 
 /* standardize a matrix */
 Eigen::MatrixXd Analysis::standardize_matrix(const Eigen::MatrixXd& matrix) {

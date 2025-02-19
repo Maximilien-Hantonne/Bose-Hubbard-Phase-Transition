@@ -33,7 +33,6 @@ Usage:
 #include <stdexcept>    // throw
 #include <string>       // string
 #include <type_traits>  // is_pointer, ...
-#include <utility>      // swap
 #include "utils.h"
 
 #ifndef SIZE_T_MAX

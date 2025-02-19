@@ -153,7 +153,6 @@ int main(int argc, char *argv[]) {
         Analysis::mean_field_parameters(n, J, mu, r);
         
         // Execute the Python script to plot the results
-        // Function to execute the mean-field Python script
         auto run_python_script = []() -> int {
             return system("python3 plot_mean_field.py");
         };

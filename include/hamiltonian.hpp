@@ -10,8 +10,6 @@
  * @brief Class representing the Bose-Hubbard Hamiltonian.
  * 
  * This class implements the Hamiltonian for the Bose-Hubbard model, which describes interacting bosons on a lattice.
- * 
- * @warning This class is not thread-safe.
  */
 
 class BH {
