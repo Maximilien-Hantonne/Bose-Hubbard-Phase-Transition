@@ -1,9 +1,8 @@
 #include<vector>
 #include<Eigen/Dense>
 #include<Eigen/SparseCore>
-#include<vector>
 
-#include "hamiltonian.h"
+#include "hamiltonian.hpp"
 
 
 /////  IMPLEMENTATION OF THE BH CLASS METHODS  /////
@@ -38,7 +37,7 @@ int BH::binomial(int n, int k) const{
 
 /* Calculate the dimension of the Hilbert space for n bosons on m sites */
 int BH::dimension(int m, int n) const{
-	return binomial(m + n - 1, m);
+	return binomial(m + n - 1, n);
 }
 
 
@@ -61,14 +60,14 @@ bool BH::next_lexicographic(Eigen::VectorXd& state, int m, int n) const {
 
 /* Create the matrix that has the Fock states of the Hilbert space basis in columns */
 Eigen::MatrixXd BH::init_lexicographic(int m, int n) const {
-	Eigen::MatrixXd basis(m, D);
-	Eigen::VectorXd state = Eigen::VectorXd::Zero(m);
+    Eigen::MatrixXd basis(m, D);
+    Eigen::VectorXd state = Eigen::VectorXd::Zero(m);
     state(0) = n;
-	int col = 0;
-	do {
-		basis.col(col++) = state;
-	} while (next_lexicographic(state, m, n)) ;
-	return basis;
+    int col = 0;
+    do {
+        basis.col(col++) = state;
+    } while (next_lexicographic(state, m, n));
+    return basis;
 }
 
 
@@ -131,25 +130,26 @@ int BH::search_tag(const Eigen::VectorXd& tags, double x) const {
 
 /* Fill the hopping term of the Hamiltonian */
 void BH::fill_hopping(const Eigen::MatrixXd& basis, const Eigen::VectorXd& tags, const std::vector<std::vector<int>>& neighbours, const std::vector<int>& primes, Eigen::SparseMatrix<double>& hmatrix, double J) const {
-	std::vector<Eigen::Triplet<double>> tripletList;
-	tripletList.reserve(basis.cols() * basis.rows() * neighbours.size());
-	for (int k = 0; k < basis.cols(); k++) {
-		for (int i = 0; i < static_cast<int>(neighbours.size()); i++) {
-			for (int j = 0; j < static_cast<int>(neighbours[i].size()); j++) {
-				Eigen::VectorXd state = basis.col(k);
-				if (basis.coeff(i, k) >= 1 && basis.coeff(j, k) >= 1) {
-					state[i] += 1;
-					state[j] -= 1;
-					double x = calculate_tag(state, primes, i);
-					int index = search_tag(tags, x);
-					double value = sqrt((basis.coeff(i, k) + 1) * basis.coeff(j, k));
-					tripletList.push_back(Eigen::Triplet<double>(index, k, -J * value));
-					tripletList.push_back(Eigen::Triplet<double>(k, index, -J * value));
-				}
-			}
-		}
-	}
-	hmatrix.setFromTriplets(tripletList.begin(), tripletList.end());
+    std::vector<Eigen::Triplet<double>> tripletList;
+    tripletList.reserve(basis.cols() * basis.rows() * neighbours.size());
+    for (int k = 0; k < basis.cols(); k++) {
+        for (int i = 0; i < static_cast<int>(neighbours.size()); i++) {
+            for (int j = 0; j < static_cast<int>(neighbours[i].size()); j++) {
+                Eigen::VectorXd state = basis.col(k);
+                if (basis.coeff(i, k) >= 1 && basis.coeff(j, k) >= 1) {
+                    state[i] += 1;
+                    state[j] -= 1;
+                    double x = calculate_tag(state, primes, i);
+                    int index = search_tag(tags, x);
+                    assert(index >= 0 && index < tags.size()); // Add assertion to check index bounds
+                    double value = sqrt((basis.coeff(i, k) + 1) * basis.coeff(j, k));
+                    tripletList.push_back(Eigen::Triplet<double>(index, k, -J * value));
+                    tripletList.push_back(Eigen::Triplet<double>(k, index, -J * value));
+                }
+            }
+        }
+    }
+    hmatrix.setFromTriplets(tripletList.begin(), tripletList.end());
 }
 
 /* Fill the interaction term of the Hamiltonian */
@@ -198,7 +198,7 @@ void BH::fill_chemical(const Eigen::MatrixXd& basis, Eigen::SparseMatrix<double>
 
 /* Constructor for the Bose-Hubbard model */
 BH::BH(const std::vector<std::vector<int>>& neighbours, int m, int n, double J, double U, double mu) : neighbours(neighbours), m(m), n(n), D(dimension(m,n)), J(J), U(U), mu(mu), H(D,D) {
-    Eigen::MatrixXd basis = init_lexicographic(m, n);
+	Eigen::MatrixXd basis = init_lexicographic(m, n);
     H.setZero();
     if (J != 0) {
         std::vector<int> primes = { 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97 };
@@ -214,6 +214,55 @@ BH::BH(const std::vector<std::vector<int>>& neighbours, int m, int n, double J, 
     }
 }
 
+
+	/* STATIC FUNCTIONS */
+
+/* Create the Hamiltonian with Fock states from 1 to n bosons */
+Eigen::SparseMatrix<double> BH::create_combined_hamiltonian(const std::vector<std::vector<int>>& neighbours, int m, int n, double J, double U, double mu) {
+    int total_dimension = 0;
+    std::vector<Eigen::SparseMatrix<double>> hamiltonians;
+    for (int bosons = 1; bosons <= n; ++bosons) {
+        BH hamiltonian(neighbours, m, bosons, J, U, mu);
+        Eigen::SparseMatrix<double> hmatrix = hamiltonian.getHamiltonian();
+        hamiltonians.push_back(hmatrix);
+        total_dimension += hmatrix.rows();
+    }
+    Eigen::SparseMatrix<double> combined_hamiltonian(total_dimension, total_dimension);
+    std::vector<Eigen::Triplet<double>> tripletList;
+    int offset = 0;
+    for (const auto& hmatrix : hamiltonians) {
+        for (int k = 0; k < hmatrix.outerSize(); ++k) {
+            for (Eigen::SparseMatrix<double>::InnerIterator it(hmatrix, k); it; ++it) {
+                tripletList.push_back(Eigen::Triplet<double>(it.row() + offset, it.col() + offset, it.value()));
+            }
+        }
+        offset += hmatrix.rows();
+    }
+    combined_hamiltonian.setFromTriplets(tripletList.begin(), tripletList.end());
+    return combined_hamiltonian;
+}
+
+/* Create the mean-field Hamiltonian */
+void BH::h_MF (double psi, int p, double mu, double J, int q, Eigen::MatrixXd& h){
+    // fill diagonal elements
+    for (int i=0; i<2*p+1; i++)
+    {
+        h(i,i) = -mu*i + 0.5*i*(i-1) + q*J*psi*psi;
+    }
+
+    // fill off-diagonal elements
+    for (int j=0; j<2*p+1; j++)
+    {
+        if (j == 0) {
+            h(1, 0) = -q * J * psi * sqrt(1);
+        } else if (j == 2 * p) {
+            h(2 * p - 1, 2 * p) = -q * J * psi * sqrt(2 * p);
+        } else {
+            h(j + 1, j) = -q * J * psi * sqrt(j + 1);
+            h(j - 1, j) = -q * J * psi * sqrt(j);
+        }
+    }
+}
 
     /* UTILITY FUNCTIONS */
 

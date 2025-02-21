@@ -42,6 +42,3 @@ plt.ylim(0, 2.5)
 plt.tight_layout()
 plt.savefig(os.path.join(save_path, "mean_field_test2.png"))
 plt.close(fig)
-
-
-
