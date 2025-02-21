@@ -24,7 +24,26 @@ add_executable(${PROJECT_NAME} ${SRC_FILES})
 # ======== Optimization ========
 # Enable compiler optimizations
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=native -Wno-deprecated-declarations")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=native")
+endif()
+
+
+# ======== Disable All Warnings ========
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    target_compile_options(${PROJECT_NAME} PRIVATE -w)
+    # Additional flags to suppress specific Clang warnings
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        target_compile_options(${PROJECT_NAME} PRIVATE
+            -Wno-analyzer-too-complex
+            -Wno-analyzer-infinite-loop
+            -Wno-analyzer-null-dereference
+            -Wno-analyzer-deadcode
+            -Wno-analyzer-undefined-retval
+            -Wno-analyzer-undefined-behavior
+        )
+    endif()
+elseif(MSVC)
+    target_compile_options(${PROJECT_NAME} PRIVATE /W0)
 endif()
 
 
@@ -60,10 +79,4 @@ endif()
 #qt_standard_project_setup()
 #qt_add_executable(project main.cpp)
 #target_link_libraries(${PROJECT_NAME} Qt5::Core Qt5::Gui Qt5::Widgets)
-
-
-
-# Add compiler warning flags
-target_compile_options(${PROJECT_NAME} PRIVATE -march=native)
-
 

@@ -14,6 +14,7 @@
 #include <Spectra/SymEigsSolver.h>
 #include <Spectra/MatOp/DenseSymMatProd.h>
 
+#include "Eigen/src/Core/Matrix.h"
 #include "operator.hpp"
 #include "analysis.hpp"
 #include "hamiltonian.hpp"
@@ -165,10 +166,21 @@ void Analysis::exact_parameters(int m, int n, double J,double U, double mu, doub
     Neighbours neighbours(m);
     neighbours.chain_neighbours();
     const std::vector<std::vector<int>>& nei = neighbours.getNeighbours();
+    
+    auto [tags, basis] = BH::set_basis(m, n);
 
-    Eigen::SparseMatrix<double> JH = BH::create_combined_hamiltonian(nei, m, n, 1, 0, 0);
-    Eigen::SparseMatrix<double> UH = BH::create_combined_hamiltonian(nei, m, n, 0, 1, 0);
-    Eigen::SparseMatrix<double> uH = BH::create_combined_hamiltonian(nei, m, n, 0, 0, 1);
+    if (std::abs(J-0.0) < std::numeric_limits<double>::epsilon() && std::abs(U-0.0) < std::numeric_limits<double>::epsilon() && std::abs(mu-0.0) < std::numeric_limits<double>::epsilon()) {
+        std::cerr << "Error: At least one of the parameters J, U, mu must be different from zero." << std::endl;
+        return;
+    }
+
+    // Eigen::SparseMatrix<double> JH = BH::max_bosons_hamiltonian(nei, m, 0, n, 1, 0, 0);
+    // Eigen::SparseMatrix<double> UH = BH::max_bosons_hamiltonian(nei, m, 0, n, 0, 1, 0);
+    // Eigen::SparseMatrix<double> uH = BH::max_bosons_hamiltonian(nei, m, 0, n, 0, 0, 1);
+
+    Eigen::SparseMatrix<double> JH = BH::fixed_bosons_hamiltonian(nei, basis, tags, m, n, 1, 0, 0);
+    Eigen::SparseMatrix<double> UH = BH::fixed_bosons_hamiltonian(nei, basis, tags, m, n, 0, 1, 0);
+    Eigen::SparseMatrix<double> uH = BH::fixed_bosons_hamiltonian(nei, basis, tags, m, n, 0, 0, 1);
 
     Resource::set_omp_threads(JH, 3);
 
@@ -176,15 +188,15 @@ void Analysis::exact_parameters(int m, int n, double J,double U, double mu, doub
 
     if (fixed_param == "J") {
         JH = JH * J;
-        calculate_and_save(fixed_param, J, U_min, U_max, mu_min, mu_max, s,s, JH, UH, uH);
+        calculate_and_save(basis, tags, JH, UH, uH, fixed_param, J, J_min, J_max, mu_min, mu_max, s, s);
     }
     else if (fixed_param == "U") {
         UH = UH * U;
-        calculate_and_save(fixed_param, U, J_min, J_max, mu_min, mu_max, s,s, UH, JH, uH);
+        calculate_and_save(basis, tags, UH, JH, uH, fixed_param, U, J_min, J_max, U_min, U_max, s, s);
     }
     else{
         uH = uH * mu;
-        calculate_and_save(fixed_param, mu, J_min, J_max, U_min, U_max, s,s, uH, JH, UH);
+        calculate_and_save(basis, tags, uH, JH, UH, fixed_param, mu, J_min, J_max, mu_min, mu_max, s, s);
     }
     Resource::timer();
     Resource::get_memory_usage(true);
@@ -192,14 +204,18 @@ void Analysis::exact_parameters(int m, int n, double J,double U, double mu, doub
 
 
 /* calculate and save gap ratio and other quantities */
-void Analysis::calculate_and_save(std::string fixed_param, double fixed_value, double param1_min, double param1_max, double param2_min, double param2_max, double param1_step, double param2_step, Eigen::SparseMatrix<double> H_fixed, Eigen::SparseMatrix<double> H1, Eigen::SparseMatrix<double> H2) {
+void Analysis::calculate_and_save(const Eigen::MatrixXd& basis, const Eigen::VectorXd& tags, const Eigen::SparseMatrix<double> H_fixed, const Eigen::SparseMatrix<double> H1, const Eigen::SparseMatrix<double> H2, std::string fixed_param, double fixed_value, double param1_min, double param1_max, double param2_min, double param2_max, double param1_step, double param2_step) {
     std::ofstream file("phase.txt");
         file << fixed_param << " ";
         if (fixed_value == 0) {
             std::cerr << "Error: Fixed parameter " << fixed_value << " cannot be zero.\n";
         }
     file << fixed_value << std::endl;
+
+    // PARAMETERS
     int nb_eigen = 15;
+    double temperature = 0.0;
+
     int num_param1 = static_cast<int>((param1_max - param1_min) / param1_step) + 1;
     int num_param2 = static_cast<int>((param2_max - param2_min) / param2_step) + 1;
     std::vector<double> param1_values(num_param1 * num_param2);
@@ -218,14 +234,18 @@ void Analysis::calculate_and_save(std::string fixed_param, double fixed_value, d
                 double param1 = param1_min + i * param1_step;
                 double param2 = param2_min + j * param2_step;
                 Eigen::SparseMatrix<double> H = H_fixed + H1 * param1 + H2 * param2;
-                Eigen::VectorXcd eigenvalues = Operator::IRLM_eigen(H, nb_eigen, eigenvectors);
+                Eigen::VectorXcd eigenvalues = Operator::IRLM_eigen(H, nb_eigen, eigenvectors).real();
                 Eigen::VectorXd vec_ratios = gap_ratios(eigenvalues, nb_eigen);
                 double gap_ratio = vec_ratios.size() > 0 ? vec_ratios.sum() / vec_ratios.size() : 0.0;
-                // Eigen::MatrixXcd spdm = SPDM(eigenvectors, nb_eigen);
-                // double density = std::real(spdm.trace());
-                // double K = compressibility(spdm);
-                double density = 0;
-                double K = 0;
+                Eigen::MatrixXcd spdm;
+                if (temperature > 1e-3) {
+                    spdm = density_matrix(eigenvectors, eigenvalues, temperature);
+                }
+                else{
+                    spdm = SPDM(basis, tags, eigenvectors);
+                }
+                double density = std::real(spdm.trace());
+                double K = compressibility(spdm);
                 int index = i * num_param2 + j;
                 
                 #pragma omp critical
@@ -316,33 +336,42 @@ Eigen::VectorXd Analysis::gap_ratios(Eigen::VectorXcd eigenvalues,int nb_eigen) 
 double Analysis::partition_function(Eigen::VectorXcd eigenvalues, double beta) {
     double Z = 0;
     for (int i = 0; i < eigenvalues.size(); ++i) {
-        Z += exp(-beta * std::real(eigenvalues[i]));
+        Z += exp(-beta * (std::real(eigenvalues[i])));
     }
     return Z;
 }
 
-/* Calculate the probability of the system being in a given state in the grand canonical ensemble */
-Eigen::VectorXd Analysis::probability(Eigen::VectorXcd eigenvalues, double beta, double mu) {
-    double Z = partition_function(eigenvalues, beta);
-    Eigen::VectorXd prob = Eigen::VectorXd::Zero(eigenvalues.size());
-    for (int i = 0; i < eigenvalues.size(); ++i) {
-        prob[i] = exp(-beta * (std::real(eigenvalues[i])-mu)) / Z;
-    }
-    return prob;
+/* Calculate the probability of the system being in a given state in the canonical ensemble */
+double Analysis::partition_proba(double energy, double beta) {
+    return exp(- beta * energy);
 }
 
 /* Calculate the single-particle density matrix of the system */
-Eigen::MatrixXcd Analysis::SPDM(const Eigen::MatrixXcd& eigenvectors, int nb_eigen) {
-    Eigen::MatrixXcd spdm = Eigen::MatrixXcd::Zero(nb_eigen, nb_eigen);
-    for (int i = 0; i < nb_eigen; ++i) {
-        for (int j = i; j < nb_eigen; ++j) {
-            spdm(i, j) = braket(eigenvectors, i, j);
+Eigen::MatrixXcd Analysis::SPDM(const Eigen::MatrixXd& basis, const Eigen::VectorXd& tags, const Eigen::MatrixXcd& eigenvectors) {
+    int m = basis.rows();
+    Eigen::MatrixXcd spdm = Eigen::MatrixXcd::Zero(m, m);
+    Eigen::VectorXd phi0 = eigenvectors.col(0).real();
+    for (int i = 0; i < m; ++i) {
+        for (int j = i; j < m; ++j) {
+            spdm(i, j) = braket(phi0, basis, tags, i, j);
         }
         for (int j = 0; j < i; ++j) {
             spdm(i, j) = std::conj(spdm(j, i));
         }
     }
-    return spdm;
+        return spdm;
+}
+
+/* Calculate the density matrix of the system */
+Eigen::MatrixXcd Analysis::density_matrix(const Eigen::MatrixXcd& eigenvectors, const Eigen::VectorXcd eigenvalues, double temperature) {
+    int nb_eigen = eigenvalues.size();
+    Eigen::MatrixXcd density_matrix = Eigen::MatrixXcd::Zero(nb_eigen, nb_eigen);
+    double Z = partition_function(eigenvalues, 1.0 / temperature);
+    for (int i = 0; i < nb_eigen; ++i) {
+        density_matrix(i, i) = partition_proba(std::real(eigenvalues[i]), 1.0 / temperature) / Z;
+    }
+    density_matrix = eigenvectors * density_matrix * eigenvectors.adjoint();
+    return density_matrix;
 }
 
 /* Calculate the compressibility of the system */
@@ -351,21 +380,34 @@ double Analysis::compressibility(const Eigen::MatrixXcd& spdm) {
     for (int i = 0; i < spdm.rows(); ++i) {
         for (int j = 0; j < spdm.cols(); ++j) {
             K += std::real(spdm(i, j) * spdm(j, i));
-        }
+        };
     }
-    return K - std::real(spdm.trace()) * std::real(spdm.trace());
+    return (K- std::real(spdm.trace() * spdm.trace())/std::real(spdm.trace()));
 }
 
 
         /* MEAN VALUE CALCULATIONS */
 
 /* Calculate the mean value of the annihilation operator <n|ai+ aj|n> */
-std::complex<double> Analysis::braket(const Eigen::MatrixXcd& eigenvectors, int i, int j) {
-    double braket_value = 0;
-    std::cout << "Not implemented yet" << std::endl;
+std::complex<double> Analysis::braket(const Eigen::VectorXcd& phi0, const Eigen::MatrixXd& basis, const Eigen::VectorXd& tags, int i, int j) {
+    std::complex<double> braket_value = 0 ;
+    std::vector<int> primes = { 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97 };
+    for (int k = 0; k < basis.cols(); ++k) {
+        if (std::abs(phi0[k]) > 1e-6) {
+            Eigen::VectorXd state = basis.col(k);
+            if (state[i] >= 0 && state[j] >= 1) {
+                state[i] += 1;
+                state[j] -= 1;
+                double x = BH::calculate_tag(state, primes, i);
+                int index = BH::search_tag(tags, x);
+                if (std::abs(phi0[index]) > 1e-6) {
+                    braket_value += std::conj(phi0[k]) * phi0[index] * sqrt(state[i] * state[j]);
+                }
+            }
+        }
+    }
     return braket_value;
 }
-
 
 
                     ///// UTILITY FUNCTIONS /////
@@ -390,7 +432,6 @@ Eigen::VectorXi Analysis::kmeans_clustering(const Eigen::MatrixXd& data, int num
     Eigen::VectorXi labels = Eigen::VectorXi::Zero(num_points);
     Eigen::VectorXi counts = Eigen::VectorXi::Zero(num_clusters);
 
-    // Initialize centroids randomly
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_int_distribution<> dis(0, num_points - 1);
@@ -402,7 +443,6 @@ Eigen::VectorXi Analysis::kmeans_clustering(const Eigen::MatrixXd& data, int num
     while (!converged) {
         converged = true;
 
-        // Assign points to the nearest centroid
         for (int i = 0; i < num_points; ++i) {
             double min_distance = std::numeric_limits<double>::max();
             int best_cluster = 0;
@@ -419,7 +459,6 @@ Eigen::VectorXi Analysis::kmeans_clustering(const Eigen::MatrixXd& data, int num
             }
         }
 
-        // Update centroids
         centroids.setZero();
         counts.setZero();
         for (int i = 0; i < num_points; ++i) {

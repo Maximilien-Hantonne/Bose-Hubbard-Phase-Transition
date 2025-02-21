@@ -9,7 +9,7 @@ This repository contains the implementation of the Bose-Hubbard model, which des
 - `include/`: Contains the header files for the project.
   - `hamiltonian.hpp`: Defines the `BH` class representing the Bose-Hubbard Hamiltonian.
   - `neighbours.hpp`: Defines the `Neighbours` class for generating the list of neighbours for different lattice structures.
-  - `operator.hpp`: Defines the `Operator` class for various matrix operations and diagonalization methods.
+  - `operator.hpp`: Defines the `Operator` class for various matrix diagonalization methods.
   - `analysis.hpp`: Defines the `Analysis` class for calculating and saving physical quantities with an exact or a mean field approach.
   - `resource.hpp`: Defines the `Resource` class for utility functions for timing, memory usage and parallelization.
 
@@ -110,7 +110,7 @@ The project provides classes to represent the Bose-Hubbard Hamiltonian and to pe
 
 - `BH`: Represents the Bose-Hubbard Hamiltonian.
 - `Neighbours`: Generates the list of neighbours for different lattice structures i.e. the geometry of the lattice.
-- `Operator`: Provides various matrix operations and diagonalization methods.
+- `Operator`: Provides various matrix diagonalization methods.
 - `Analysis`: Computes the physical quantities for exact or mean-field approach of Bose-Hubbard model.
 
 ### Command-Line Options
