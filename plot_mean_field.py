@@ -11,7 +11,7 @@ plt.rc('text', usetex=True)
 plt.rc('font', family='serif')
 
 current_dir = os.path.dirname(os.path.realpath(__file__))
-save_path = os.path.join(current_dir, "figures")
+save_path = os.path.join(current_dir, "../figures/mean_field")
 
 # Science plots style
 # plt.style.use(['science', 'grid'])

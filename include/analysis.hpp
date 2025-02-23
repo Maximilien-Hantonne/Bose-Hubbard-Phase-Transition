@@ -46,13 +46,16 @@ private:
     // Thermodynamic functions
 
     /* Calculate the single-particle density matrix of the system */
-    static Eigen::MatrixXcd SPDM(const Eigen::MatrixXd& basis, const Eigen::VectorXd& tags, const Eigen::MatrixXcd& eigenvectors);
+    static Eigen::MatrixXcd SPDM(const Eigen::MatrixXd& basis, const Eigen::VectorXd& tags, Eigen::MatrixXcd& eigenvectors);
 
     /* Calculate the density matrix of the system */
-    static Eigen::MatrixXcd density_matrix(const Eigen::MatrixXcd& eigenvectors, const Eigen::VectorXcd eigenvalues, double temperature);
+    static Eigen::MatrixXcd density_matrix(const Eigen::VectorXcd eigenvalues, Eigen::MatrixXcd& eigenvectors, double temperature);
 
     /* Calculate the compressibility of the system */
-    static double compressibility(const Eigen::MatrixXcd& spdm);
+    static double fluctuations(const Eigen::MatrixXcd& spdm);
+
+    /* Normalize the spdm to the distance between each site */
+    static void normalize_spdm(Eigen::MatrixXcd& spdm);
     
 // MEAN VALUE CALCULATIONS
 
@@ -72,6 +75,14 @@ private:
     /* standardize a matrix */
     static Eigen::MatrixXd standardize_matrix(const Eigen::MatrixXd& matrix);
 
+    /* save a matrix to a csv file */
+    static void save_matrices_to_csv(const std::string& filename, const std::vector<Eigen::MatrixXd>& matrices, const std::string& label);
+
+    /* save the dispersions to a file */
+    static void save_dispersions(const std::string& filename, const std::vector<double>& dispersions);
+
+    /* save the cluster labels to a file */
+    static void save_cluster_labels(const std::string& filename, const std::vector<Eigen::VectorXi>& cluster_labels);
 
 public:
     

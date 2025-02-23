@@ -138,10 +138,6 @@ int main(int argc, char *argv[]) {
             return system("python3 plot.py");
         };
         std::future<int> result = std::async(std::launch::async, run_python_script);
-        if (result.wait_for(std::chrono::seconds(30)) == std::future_status::timeout) {
-            std::cerr << "Error: Python script took too long to execute." << std::endl;
-            return 1;
-        }
         if (result.get() != 0) {
             std::cerr << "Error when executing Python script." << std::endl;
             return 1;
@@ -157,10 +153,6 @@ int main(int argc, char *argv[]) {
             return system("python3 plot_mean_field.py");
         };
         std::future<int> result = std::async(std::launch::async, run_python_script);
-        if (result.wait_for(std::chrono::seconds(30)) == std::future_status::timeout) {
-            std::cerr << "Error: Python script took too long to execute." << std::endl;
-            return 1;
-        }
         if (result.get() != 0) {
             std::cerr << "Error when executing Python script." << std::endl;
             return 1;

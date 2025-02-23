@@ -174,13 +174,15 @@ void Analysis::exact_parameters(int m, int n, double J,double U, double mu, doub
         return;
     }
 
-    // Eigen::SparseMatrix<double> JH = BH::max_bosons_hamiltonian(nei, m, 0, n, 1, 0, 0);
-    // Eigen::SparseMatrix<double> UH = BH::max_bosons_hamiltonian(nei, m, 0, n, 0, 1, 0);
-    // Eigen::SparseMatrix<double> uH = BH::max_bosons_hamiltonian(nei, m, 0, n, 0, 0, 1);
+    int n_min = 1, n_max = n;
 
-    Eigen::SparseMatrix<double> JH = BH::fixed_bosons_hamiltonian(nei, basis, tags, m, n, 1, 0, 0);
-    Eigen::SparseMatrix<double> UH = BH::fixed_bosons_hamiltonian(nei, basis, tags, m, n, 0, 1, 0);
-    Eigen::SparseMatrix<double> uH = BH::fixed_bosons_hamiltonian(nei, basis, tags, m, n, 0, 0, 1);
+    Eigen::SparseMatrix<double> JH = BH::max_bosons_hamiltonian(nei, m, n_min, n_max, 1, 0, 0);
+    Eigen::SparseMatrix<double> UH = BH::max_bosons_hamiltonian(nei, m, n_min, n_max, 0, 1, 0);
+    Eigen::SparseMatrix<double> uH = BH::max_bosons_hamiltonian(nei, m, n_min, n_max, 0, 0, 1);
+
+    // Eigen::SparseMatrix<double> JH = BH::fixed_bosons_hamiltonian(nei, basis, tags, m, n, 1, 0, 0);
+    // Eigen::SparseMatrix<double> UH = BH::fixed_bosons_hamiltonian(nei, basis, tags, m, n, 0, 1, 0);
+    // Eigen::SparseMatrix<double> uH = BH::fixed_bosons_hamiltonian(nei, basis, tags, m, n, 0, 0, 1);
 
     Resource::set_omp_threads(JH, 3);
 
@@ -206,14 +208,15 @@ void Analysis::exact_parameters(int m, int n, double J,double U, double mu, doub
 /* calculate and save gap ratio and other quantities */
 void Analysis::calculate_and_save(const Eigen::MatrixXd& basis, const Eigen::VectorXd& tags, const Eigen::SparseMatrix<double> H_fixed, const Eigen::SparseMatrix<double> H1, const Eigen::SparseMatrix<double> H2, std::string fixed_param, double fixed_value, double param1_min, double param1_max, double param2_min, double param2_max, double param1_step, double param2_step) {
     std::ofstream file("phase.txt");
-        file << fixed_param << " ";
-        if (fixed_value == 0) {
-            std::cerr << "Error: Fixed parameter " << fixed_value << " cannot be zero.\n";
-        }
+    file << fixed_param << " ";
+    if (fixed_value == 0) {
+        std::cerr << "Error: Fixed parameter " << fixed_value << " cannot be zero.\n";
+    }
     file << fixed_value << std::endl;
 
     // PARAMETERS
-    int nb_eigen = 15;
+
+    int nb_eigen = 10;
     double temperature = 0.0;
 
     int num_param1 = static_cast<int>((param1_max - param1_min) / param1_step) + 1;
@@ -225,7 +228,8 @@ void Analysis::calculate_and_save(const Eigen::MatrixXd& basis, const Eigen::Vec
     std::vector<double> compressibility_values(num_param1 * num_param2);
     Eigen::MatrixXcd eigenvectors;
     Eigen::MatrixXd matrix_ratios(num_param1 * num_param2, nb_eigen -2);
-    double variance_threshold_percent = 1e-9;
+    std::vector<Eigen::MatrixXd> spdm_matrices(num_param1 * num_param2);
+    double variance_threshold_percent = 1e-8;
 
     while (true) {
         #pragma omp parallel for collapse(2) schedule(dynamic)
@@ -234,18 +238,22 @@ void Analysis::calculate_and_save(const Eigen::MatrixXd& basis, const Eigen::Vec
                 double param1 = param1_min + i * param1_step;
                 double param2 = param2_min + j * param2_step;
                 Eigen::SparseMatrix<double> H = H_fixed + H1 * param1 + H2 * param2;
-                Eigen::VectorXcd eigenvalues = Operator::IRLM_eigen(H, nb_eigen, eigenvectors).real();
+                Eigen::VectorXcd eigenvalues = Operator::IRLM_eigen(H, nb_eigen, eigenvectors);
                 Eigen::VectorXd vec_ratios = gap_ratios(eigenvalues, nb_eigen);
                 double gap_ratio = vec_ratios.size() > 0 ? vec_ratios.sum() / vec_ratios.size() : 0.0;
                 Eigen::MatrixXcd spdm;
+                double density, K;
                 if (temperature > 1e-3) {
-                    spdm = density_matrix(eigenvectors, eigenvalues, temperature);
+                    spdm = density_matrix(eigenvalues, eigenvectors, temperature);
                 }
-                else{
+                else {
                     spdm = SPDM(basis, tags, eigenvectors);
                 }
-                double density = std::real(spdm.trace());
-                double K = compressibility(spdm);
+                density = std::real(spdm.trace());
+                K = fluctuations(spdm);
+
+                normalize_spdm(spdm);
+
                 int index = i * num_param2 + j;
                 
                 #pragma omp critical
@@ -255,7 +263,8 @@ void Analysis::calculate_and_save(const Eigen::MatrixXd& basis, const Eigen::Vec
                     gap_ratios_values[index] = gap_ratio;
                     boson_density_values[index] = density;
                     compressibility_values[index] = K;
-                    matrix_ratios.row(i * num_param2 + j) = vec_ratios;
+                    matrix_ratios.row(index) = vec_ratios;
+                    spdm_matrices[index] = spdm.real();
                 }
             }
         }
@@ -280,32 +289,37 @@ void Analysis::calculate_and_save(const Eigen::MatrixXd& basis, const Eigen::Vec
 
     file.close();
 
-    // PCA
-    matrix_ratios = standardize_matrix(matrix_ratios);
-    matrix_ratios = (matrix_ratios.adjoint() * matrix_ratios) / double(matrix_ratios.rows() - 1);
-    Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigensolver(matrix_ratios);
-    Eigen::MatrixXd eigenvectors2 = eigensolver.eigenvectors().real().rowwise().reverse();
-    Eigen::MatrixXd projected_data = matrix_ratios * eigenvectors2.leftCols(2);
-    std::ofstream projected_file("projected_data.txt");
-    projected_file << projected_data << std::endl;
-    projected_file.close();
+    // PCA, dispersion, and clustering
 
-    // Dispersion
-    std::ofstream dispersion_file("dispersion.txt");
-    double dispersion = calculate_dispersion(projected_data);
-    dispersion_file << "Dispersion: " << dispersion << std::endl;
-    dispersion_file.close();
+    std::vector<Eigen::MatrixXd> pca_matrices;
+    std::vector<double> dispersions;
+    std::vector<Eigen::VectorXi> cluster_labels;
 
-    // Clustering
-    int num_clusters = 2;
-    Eigen::MatrixXd projected_data_copy = projected_data;
-    Eigen::VectorXi labels = kmeans_clustering(projected_data_copy, num_clusters);
-    std::ofstream clusters_file("clusters.txt");
-    for (int i = 0; i < labels.size(); ++i) {
-        clusters_file << labels[i] << std::endl;
+    for (int start_row = 0; start_row < matrix_ratios.rows()-6; start_row += 6) {
+        int end_row = std::min(start_row + 6, static_cast<int>(matrix_ratios.rows()));
+        Eigen::MatrixXd sub_matrix = matrix_ratios.block(start_row, 0, end_row - start_row, matrix_ratios.cols());
+
+        sub_matrix = standardize_matrix(sub_matrix);
+        sub_matrix = (sub_matrix.adjoint() * sub_matrix) / double(sub_matrix.rows() - 1);
+        Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigensolver(sub_matrix);
+        Eigen::MatrixXd eigenvectors2 = eigensolver.eigenvectors().real().rowwise().reverse();
+        Eigen::MatrixXd projected_data = sub_matrix * eigenvectors2.leftCols(2);
+        pca_matrices.push_back(projected_data);
+
+        double dispersion = calculate_dispersion(projected_data);
+        dispersions.push_back(dispersion);
+
+        int num_clusters = 2;
+        Eigen::MatrixXd projected_data_copy = projected_data;
+        Eigen::VectorXi labels = kmeans_clustering(projected_data_copy, num_clusters);
+        cluster_labels.push_back(labels);
     }
-    clusters_file.close();
-    }
+
+    save_matrices_to_csv("spdm_matrices.csv", spdm_matrices, "Matrix");
+    save_matrices_to_csv("pca_results.csv", pca_matrices, "PCA");
+    save_dispersions("dispersions.csv", dispersions);
+    save_cluster_labels("cluster_labels.csv", cluster_labels);
+}
 
 
         /* GAP RATIOS */
@@ -346,43 +360,68 @@ double Analysis::partition_proba(double energy, double beta) {
     return exp(- beta * energy);
 }
 
-/* Calculate the single-particle density matrix of the system */
-Eigen::MatrixXcd Analysis::SPDM(const Eigen::MatrixXd& basis, const Eigen::VectorXd& tags, const Eigen::MatrixXcd& eigenvectors) {
-    int m = basis.rows();
-    Eigen::MatrixXcd spdm = Eigen::MatrixXcd::Zero(m, m);
-    Eigen::VectorXd phi0 = eigenvectors.col(0).real();
-    for (int i = 0; i < m; ++i) {
-        for (int j = i; j < m; ++j) {
-            spdm(i, j) = braket(phi0, basis, tags, i, j);
-        }
-        for (int j = 0; j < i; ++j) {
-            spdm(i, j) = std::conj(spdm(j, i));
-        }
-    }
-        return spdm;
-}
-
 /* Calculate the density matrix of the system */
-Eigen::MatrixXcd Analysis::density_matrix(const Eigen::MatrixXcd& eigenvectors, const Eigen::VectorXcd eigenvalues, double temperature) {
+Eigen::MatrixXcd Analysis::density_matrix(const Eigen::VectorXcd eigenvalues, Eigen::MatrixXcd& eigenvectors, double temperature) {
     int nb_eigen = eigenvalues.size();
+    Eigen::VectorXd normalized_eigenvalues = eigenvalues.real()/eigenvalues.real().maxCoeff();
     Eigen::MatrixXcd density_matrix = Eigen::MatrixXcd::Zero(nb_eigen, nb_eigen);
-    double Z = partition_function(eigenvalues, 1.0 / temperature);
+    double Z = partition_function(normalized_eigenvalues, 1.0 / temperature);
     for (int i = 0; i < nb_eigen; ++i) {
-        density_matrix(i, i) = partition_proba(std::real(eigenvalues[i]), 1.0 / temperature) / Z;
+        density_matrix(i, i) = partition_proba(std::real(normalized_eigenvalues[i]), 1.0 / temperature) / Z;
     }
-    density_matrix = eigenvectors * density_matrix * eigenvectors.adjoint();
+    Eigen::MatrixXcd t_eigenvectors = eigenvectors.transpose();
+    density_matrix = eigenvectors * density_matrix * t_eigenvectors;
     return density_matrix;
 }
 
+/* Calculate the single-particle density matrix of the system */
+Eigen::MatrixXcd Analysis::SPDM(const Eigen::MatrixXd& basis, const Eigen::VectorXd& tags, Eigen::MatrixXcd& eigenvectors) {
+    int m = basis.rows();
+    Eigen::MatrixXcd spdm = Eigen::MatrixXcd::Zero(m, m);
+    Eigen::VectorXd phi0 = eigenvectors.col(0).real();
+    // for (int i = 0; i < m; ++i) {
+    //     for (int j = i; j < m; ++j) {
+    //         spdm(i, j) = braket(phi0, basis, tags, i, j);
+    //     }
+    //     for (int j = 0; j < i; ++j) {
+    //         spdm(i, j) = std::conj(spdm(j, i));
+    //     }
+    // }
+    for (int k = 0; k < eigenvectors.cols(); ++k) {
+        Eigen::VectorXd phi = eigenvectors.col(k).real();
+        for (int i = 0; i < m; ++i) {
+            for (int j = i; j < m; ++j) {
+                spdm(i, j) += braket(phi, basis, tags, i, j);
+            }
+            for (int j = 0; j < i; ++j) {
+                spdm(i, j) += std::conj(spdm(j, i));
+            }
+        }
+    }
+    return spdm/ eigenvectors.cols();
+}
+
+/* Normalize the spdm to the distance between each site */
+void Analysis::normalize_spdm(Eigen::MatrixXcd& spdm) {
+    for (int i = 0; i < spdm.rows(); ++i) {
+        for (int j = 0; j < spdm.cols(); ++j) {
+            spdm(i, j) /= (std::abs(i - j) + 1);
+        }
+    }
+}
+
+
+        /* COMPRESSIBILITY */
 /* Calculate the compressibility of the system */
-double Analysis::compressibility(const Eigen::MatrixXcd& spdm) {
+double Analysis::fluctuations(const Eigen::MatrixXcd& spdm) {
     double K = 0;
     for (int i = 0; i < spdm.rows(); ++i) {
         for (int j = 0; j < spdm.cols(); ++j) {
-            K += std::real(spdm(i, j) * spdm(j, i));
+            K += std::real(spdm(i, j) * spdm(i, j));
         };
     }
-    return (K- std::real(spdm.trace() * spdm.trace())/std::real(spdm.trace()));
+    // std::cout << "K = " << K << " - trace = " << spdm.trace().real() << std::endl;
+    return (K-std::pow(spdm.trace().real(),2))/(spdm.trace().real());
 }
 
 
@@ -393,7 +432,7 @@ std::complex<double> Analysis::braket(const Eigen::VectorXcd& phi0, const Eigen:
     std::complex<double> braket_value = 0 ;
     std::vector<int> primes = { 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97 };
     for (int k = 0; k < basis.cols(); ++k) {
-        if (std::abs(phi0[k]) > 1e-6) {
+        if (std::abs(phi0[k]) > std::numeric_limits<double>::epsilon()) {
             Eigen::VectorXd state = basis.col(k);
             if (state[i] >= 0 && state[j] >= 1) {
                 state[i] += 1;
@@ -476,7 +515,7 @@ Eigen::VectorXi Analysis::kmeans_clustering(const Eigen::MatrixXd& data, int num
 }
 
 
-        /* STANDARDIZE MATRIX */
+        /* STANDARDIZATION */
 
 /* standardize a matrix */
 Eigen::MatrixXd Analysis::standardize_matrix(const Eigen::MatrixXd& matrix) {
@@ -485,4 +524,62 @@ Eigen::MatrixXd Analysis::standardize_matrix(const Eigen::MatrixXd& matrix) {
     Eigen::VectorXd stddev = ((matrix.rowwise() - mean.transpose()).array().square().colwise().sum() / (matrix.rows() - 1)).sqrt();
     standardized_matrix = (matrix.rowwise() - mean.transpose()).array().rowwise() / stddev.transpose().array();
     return standardized_matrix;
+}
+
+
+        /* SAVE TO CSV */
+
+/* Save the real part of matrices to a CSV file */
+void Analysis::save_matrices_to_csv(const std::string& filename, const std::vector<Eigen::MatrixXd>& matrices, const std::string& label) {
+    std::ofstream file(filename);
+    if (file.is_open()) {
+        for (size_t k = 0; k < matrices.size(); ++k) {
+            file << label << " " << k << std::endl;
+            const Eigen::MatrixXd& matrix = matrices[k];
+            for (int i = 0; i < matrix.rows(); ++i) {
+                for (int j = 0; j < matrix.cols(); ++j) {
+                    file << matrix(i, j);
+                    if (j < matrix.cols() - 1) {
+                        file << ",";
+                    }
+                }
+                file << std::endl;
+            }
+            file << std::endl;
+        }
+        file.close();
+    } else {
+        std::cerr << "Unable to open file: " << filename << std::endl;
+    }
+}
+
+void Analysis::save_dispersions(const std::string& filename, const std::vector<double>& dispersions) {
+    std::ofstream file(filename);
+    if (file.is_open()) {
+        for (size_t k = 0; k < dispersions.size(); ++k) {
+            file << "Dispersion " << k << std::endl;
+            file << dispersions[k] << std::endl;
+            file << std::endl;
+        }
+        file.close();
+    } else {
+        std::cerr << "Unable to open file: " << filename << std::endl;
+    }
+}
+
+void Analysis::save_cluster_labels(const std::string& filename, const std::vector<Eigen::VectorXi>& cluster_labels) {
+    std::ofstream file(filename);
+    if (file.is_open()) {
+        for (size_t k = 0; k < cluster_labels.size(); ++k) {
+            file << "Clusters " << k << std::endl;
+            const Eigen::VectorXi& labels = cluster_labels[k];
+            for (int i = 0; i < labels.size(); ++i) {
+                file << labels[i] << std::endl;
+            }
+            file << std::endl;
+        }
+        file.close();
+    } else {
+        std::cerr << "Unable to open file: " << filename << std::endl;
+    }
 }
