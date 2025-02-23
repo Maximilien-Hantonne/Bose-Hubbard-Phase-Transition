@@ -147,6 +147,11 @@ Make sure you have the required dependencies installed. You can then launch the 
 ./QuantumProject -m 5 -n 5 -J 100 -U 0 -u 0 -r 100 -s 5 -f "J" --t "exact"
 ```
 
+The parameters not required in the simulation need not be specified. For example if you want to get the mean-field phase diagramm (in order to get the same figure as in figures/mean_field): 
+```sh
+./QuantumProject -n 1000 -J 0 -rJ 0.25 -u 0 -ru 4 --t "mean"
+```
+
 ## Authors
 
 - [Maximilien HANTONNE](https://github.com/Maximilien-Hantonne)

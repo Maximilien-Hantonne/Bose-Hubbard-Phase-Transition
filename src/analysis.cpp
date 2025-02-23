@@ -31,8 +31,9 @@
 /* Main function for the mean-field calculations */
 void Analysis::mean_field_parameters(int n, double J, double mu, double r){
 
+    std::cout << "*** Start: Mean-field self-consistent method ***" << std::endl;
     double J_min = J; 
-    double J_max = J + r;
+    double J_max = J + 0.25;
     double dJ = (J_max - J_min) / n;
     double mu_min = mu;
     double mu_max = mu + r;
@@ -56,6 +57,7 @@ void Analysis::mean_field_parameters(int n, double J, double mu, double r){
     
     Resource::timer(); // stop the timer
     Resource::get_memory_usage(true); // get the memory usage
+    std::cout << "*** End: Mean-field self-consistent method ***" << std::endl;
 
     file.close();
 }
