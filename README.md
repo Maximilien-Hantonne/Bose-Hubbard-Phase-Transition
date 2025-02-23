@@ -159,4 +159,4 @@ Feel free to contribute to our project
 
 ## License
 
-This project is licensed under the MIT License. See the LICENSE file for details.
+This project is licensed under the GNU GPLv3 - see LICENCE file for details
