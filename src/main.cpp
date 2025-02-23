@@ -30,6 +30,18 @@ void print_usage() {
               << "  -t, --type      Type of calculation (exact or mean)\n";
 }
 
+/**
+ * @brief Print the copyright and warranty information.
+ */
+ void copyright_warranty() {
+    std::cout << "======================================\n";
+    std::cout << "Bose-Hubbard Phase Transition\n";
+    std::cout << "Copyright (C) 2025 by Maximilien HANTONNE, Rémy LYSCAR and Alexandre MENARD\n";
+    std::cout << "This program is licensed under the GNU General Public License v3.0.\n";
+    std::cout << "For more details, see the LICENSE file.\n";
+    std::cout << "======================================\n\n\n";
+}
+
 
 /**
  * @brief Main function for the Bose-Hubbard Phase Transition program.
@@ -56,6 +68,9 @@ void print_usage() {
  */
 
 int main(int argc, char *argv[]) {
+
+    // Print the copyright and warranty information
+    copyright_warranty();
 
     // PARAMETERS OF THE MODEL
     int m, n;
