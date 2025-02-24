@@ -164,33 +164,39 @@ double Analysis::SCMF(double mu, double J, int q ,double psi0)
 
 /*main function for exact calculations parameters*/
 void Analysis::exact_parameters(int m, int n, double J,double U, double mu, double s, double r, std::string fixed_param) {
-    Resource::timer();
-
-    Neighbours neighbours(m);
-    neighbours.chain_neighbours();
-    const std::vector<std::vector<int>>& nei = neighbours.getNeighbours();
     
-    auto [tags, basis] = BH::set_basis(m, n);
-
+    // Prerequisites
     if (std::abs(J-0.0) < std::numeric_limits<double>::epsilon() && std::abs(U-0.0) < std::numeric_limits<double>::epsilon() && std::abs(mu-0.0) < std::numeric_limits<double>::epsilon()) {
         std::cerr << "Error: At least one of the parameters J, U, mu must be different from zero." << std::endl;
         return;
     }
+    Resource::timer();
 
-    int n_min = 1, n_max = n;
+    // Set the geometry of the lattice
+    Neighbours neighbours(m);
+    neighbours.chain_neighbours();
+    const std::vector<std::vector<int>>& nei = neighbours.getNeighbours();
 
-    Eigen::SparseMatrix<double> JH = BH::max_bosons_hamiltonian(nei, m, n_min, n_max, 1, 0, 0);
-    Eigen::SparseMatrix<double> UH = BH::max_bosons_hamiltonian(nei, m, n_min, n_max, 0, 1, 0);
-    Eigen::SparseMatrix<double> uH = BH::max_bosons_hamiltonian(nei, m, n_min, n_max, 0, 0, 1);
+    // // Set the matrices for each term of the Hamiltonian in the Fock states from 1 to n bosons
+    // int n_min = 1, n_max = n;
+    // auto [tags, basis] = BH::max_set_basis(m, n);
+    // Eigen::SparseMatrix<double> JH = BH::max_bosons_hamiltonian(nei, m, n_min, n_max, 1, 0, 0);
+    // Eigen::SparseMatrix<double> UH = BH::max_bosons_hamiltonian(nei, m, n_min, n_max, 0, 1, 0);
+    // Eigen::SparseMatrix<double> uH = BH::max_bosons_hamiltonian(nei, m, n_min, n_max, 0, 0, 1);
 
-    // Eigen::SparseMatrix<double> JH = BH::fixed_bosons_hamiltonian(nei, basis, tags, m, n, 1, 0, 0);
-    // Eigen::SparseMatrix<double> UH = BH::fixed_bosons_hamiltonian(nei, basis, tags, m, n, 0, 1, 0);
-    // Eigen::SparseMatrix<double> uH = BH::fixed_bosons_hamiltonian(nei, basis, tags, m, n, 0, 0, 1);
+    // Set the matrices for each term of the Hamiltonian in the Fock states with n bosons
+    auto [tags, basis] = BH::fixed_set_basis(m, n);
+    Eigen::SparseMatrix<double> JH = BH::fixed_bosons_hamiltonian(nei, basis, tags, m, n, 1, 0, 0);
+    Eigen::SparseMatrix<double> UH = BH::fixed_bosons_hamiltonian(nei, basis, tags, m, n, 0, 1, 0);
+    Eigen::SparseMatrix<double> uH = BH::fixed_bosons_hamiltonian(nei, basis, tags, m, n, 0, 0, 1);
 
+    // Set the number of threads for the calculations
     Resource::set_omp_threads(JH, 3);
 
+    // Set the parameters for the calculations
     double J_min = J, J_max = J + r, mu_min = mu, mu_max = mu + r, U_min = U, U_max = U + r;
 
+    // Calculate the exact parameters
     if (fixed_param == "J") {
         JH = JH * J;
         calculate_and_save(basis, tags, JH, UH, uH, fixed_param, J, J_min, J_max, mu_min, mu_max, s, s);
@@ -203,6 +209,8 @@ void Analysis::exact_parameters(int m, int n, double J,double U, double mu, doub
         uH = uH * mu;
         calculate_and_save(basis, tags, uH, JH, UH, fixed_param, mu, J_min, J_max, mu_min, mu_max, s, s);
     }
+
+    // End of the calculations
     Resource::timer();
     Resource::get_memory_usage(true);
 }
@@ -210,6 +218,8 @@ void Analysis::exact_parameters(int m, int n, double J,double U, double mu, doub
 
 /* calculate and save gap ratio and other quantities */
 void Analysis::calculate_and_save(const Eigen::MatrixXd& basis, const Eigen::VectorXd& tags, const Eigen::SparseMatrix<double> H_fixed, const Eigen::SparseMatrix<double> H1, const Eigen::SparseMatrix<double> H2, std::string fixed_param, double fixed_value, double param1_min, double param1_max, double param2_min, double param2_max, double param1_step, double param2_step) {
+    
+    // Save the fixed parameter and value
     std::ofstream file("phase.txt");
     file << fixed_param << " ";
     if (fixed_value == 0) {
@@ -217,11 +227,11 @@ void Analysis::calculate_and_save(const Eigen::MatrixXd& basis, const Eigen::Vec
     }
     file << fixed_value << std::endl;
 
-    // PARAMETERS
-
+    // Parameters for the calculations
     int nb_eigen = 10;
     double temperature = 0.0;
 
+    // Matrices initialization
     int num_param1 = static_cast<int>((param1_max - param1_min) / param1_step) + 1;
     int num_param2 = static_cast<int>((param2_max - param2_min) / param2_step) + 1;
     std::vector<double> param1_values(num_param1 * num_param2);
@@ -234,6 +244,7 @@ void Analysis::calculate_and_save(const Eigen::MatrixXd& basis, const Eigen::Vec
     std::vector<Eigen::MatrixXd> spdm_matrices;
     double variance_threshold_percent = 1e-8;
 
+    // Main loop for the calculations with parallelization
     while (true) {
         #pragma omp parallel for collapse(2) schedule(dynamic)
         for (int i = 0; i < num_param1; ++i) {
@@ -255,7 +266,7 @@ void Analysis::calculate_and_save(const Eigen::MatrixXd& basis, const Eigen::Vec
                 density = std::real(spdm.trace());
                 K = fluctuations(spdm);
 
-                // normalize_spdm(spdm);
+                normalize_spdm(spdm);
 
                 int index = i * num_param1 + j;
                 
@@ -267,14 +278,14 @@ void Analysis::calculate_and_save(const Eigen::MatrixXd& basis, const Eigen::Vec
                     boson_density_values[index] = density;
                     compressibility_values[index] = K;
                     matrix_ratios.row(index) = vec_ratios;
-                    if(j==num_param2-i-1){
+                    if(j == num_param2 - i - 1){
                         spdm_matrices.push_back(spdm.real());
                     }
-                    
                 }
             }
         }
 
+        // Check the variance of the gap ratios, if too small, increase the number of eigenvalues
         double mean_gap_ratio = std::accumulate(gap_ratios_values.begin(), gap_ratios_values.end(), 0.0) / gap_ratios_values.size();
         double variance_gap_ratio = 0.0;
         for (const auto& value : gap_ratios_values) {
@@ -284,29 +295,33 @@ void Analysis::calculate_and_save(const Eigen::MatrixXd& basis, const Eigen::Vec
         if (variance_gap_ratio > variance_threshold_percent * mean_gap_ratio) {
             break;
         }
-
         nb_eigen += 5;
         matrix_ratios.resize(num_param1 * num_param2, nb_eigen - 2);  
     }
 
+    // Save the results to a file
     for (int i = 0; i < num_param1 * num_param2; ++i) {
         file << param1_values[i] << " " << param2_values[i] << " " << gap_ratios_values[i] << " " << boson_density_values[i] << " " << compressibility_values[i] << std::endl;
     }
 
     file.close();
 
-    // PCA, dispersion, and clustering
-
+    // PCA, dispersion, and clustering initialization
     std::vector<Eigen::MatrixXd> pca_matrices;
     std::vector<double> dispersions;
     std::vector<Eigen::VectorXi> cluster_labels;
 
-    int num_rows = 10;
+    // Main loop for the PCA, dispersion, and clustering
+    int num_rows = 3;
     for (int i = 0; i < param1_max; ++i) {
+
+        // Choose a subset of the matrix to analyze
         int start_row = static_cast<int>(std::max(param2_max - num_rows - i * (param2_max - num_rows) / param1_max, 0.0));
         int end_row = static_cast<int>(std::max(param2_max - i * (param2_max - num_rows) / param1_max, 0.0 + num_rows));
+        // std::cout << "start_row: " << start_row << " end_row: " << end_row << std::endl;
         Eigen::MatrixXd sub_matrix = matrix_ratios.block(i + start_row, 0, i + end_row, matrix_ratios.cols());
 
+        // PCA
         sub_matrix = standardize_matrix(sub_matrix);
         sub_matrix = (sub_matrix.adjoint() * sub_matrix) / double(sub_matrix.rows() - 1);
         Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigensolver(sub_matrix);
@@ -314,15 +329,18 @@ void Analysis::calculate_and_save(const Eigen::MatrixXd& basis, const Eigen::Vec
         Eigen::MatrixXd projected_data = sub_matrix * eigenvectors2.leftCols(2);
         pca_matrices.push_back(projected_data);
 
+        // Dispersion
         double dispersion = calculate_dispersion(projected_data);
         dispersions.push_back(dispersion);
 
+        // Clustering into 2 clusters
         int num_clusters = 2;
         Eigen::MatrixXd projected_data_copy = projected_data;
         Eigen::VectorXi labels = kmeans_clustering(projected_data_copy, num_clusters);
         cluster_labels.push_back(labels);
     }
 
+    // Save the results to a file
     save_matrices_to_csv("spdm_matrices.csv", spdm_matrices, "Matrix");
     save_matrices_to_csv("pca_results.csv", pca_matrices, "PCA");
     save_dispersions("dispersions.csv", dispersions);
@@ -419,8 +437,8 @@ void Analysis::normalize_spdm(Eigen::MatrixXcd& spdm) {
 }
 
 
-        /* COMPRESSIBILITY */
-/* Calculate the compressibility of the system */
+        /* FLUCTUATIONS */
+/* Calculate the fluctuations of the system */
 double Analysis::fluctuations(const Eigen::MatrixXcd& spdm) {
     double K = 0;
     for (int i = 0; i < spdm.rows(); ++i) {
@@ -561,6 +579,7 @@ void Analysis::save_matrices_to_csv(const std::string& filename, const std::vect
     }
 }
 
+/* Save the dispersions to a file */
 void Analysis::save_dispersions(const std::string& filename, const std::vector<double>& dispersions) {
     std::ofstream file(filename);
     if (file.is_open()) {
@@ -575,6 +594,7 @@ void Analysis::save_dispersions(const std::string& filename, const std::vector<d
     }
 }
 
+/* Save the cluster labels to a file */
 void Analysis::save_cluster_labels(const std::string& filename, const std::vector<Eigen::VectorXi>& cluster_labels) {
     std::ofstream file(filename);
     if (file.is_open()) {

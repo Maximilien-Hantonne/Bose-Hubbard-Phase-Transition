@@ -128,7 +128,7 @@ int BH::search_tag(const Eigen::VectorXd& tags, double x) {
 }
 
 /* Create the matrix that has the Fock states of the Hilbert space basis in columns sorted by tags with their unique tag */
-std::pair<Eigen::VectorXd, Eigen::MatrixXd> BH::set_basis(int m, int n) {
+std::pair<Eigen::VectorXd, Eigen::MatrixXd> BH::fixed_set_basis(int m, int n) {
     std::vector<int> primes = { 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97 };
     Eigen::MatrixXd basis = init_lexicographic(m, n);
     Eigen::VectorXd tags = calculate_tags(basis, primes);
@@ -136,6 +136,22 @@ std::pair<Eigen::VectorXd, Eigen::MatrixXd> BH::set_basis(int m, int n) {
     return std::make_pair(tags, basis);
 }
 
+/* Create the matrix that has the Fock states of the Hilbert space basis in columns sorted by tags with their unique tag */
+std::pair<Eigen::VectorXd, Eigen::MatrixXd> BH::max_set_basis(int m, int n) {
+    Eigen::VectorXd tags;
+    Eigen::MatrixXd basis(m, 0);
+    for (int bosons = 1; bosons <= n; ++bosons) {
+        auto [fixed_tags, fixed_basis] = fixed_set_basis(m, bosons);
+        int old_size = tags.size();
+        tags.conservativeResize(old_size + fixed_tags.size());
+        tags.segment(old_size, fixed_tags.size()) = fixed_tags;
+        int old_cols = basis.cols();
+        basis.conservativeResize(Eigen::NoChange, old_cols + fixed_basis.cols());
+        basis.block(0, old_cols, basis.rows(), fixed_basis.cols()) = fixed_basis;
+    }
+    sort_basis(tags, basis);
+    return std::make_pair(tags, basis);
+}
     /* FILL THE HAMILTONIAN OF THE SYSTEM */
 
 /* Fill the hopping term of the Hamiltonian */
@@ -239,8 +255,8 @@ Eigen::SparseMatrix<double> BH::max_bosons_hamiltonian(const std::vector<std::ve
         n_max = n_min;
     }
     for (int bosons = n_min; bosons <= n_max; ++bosons) {
-        auto [tags, basis] = set_basis(m, bosons);
-        Eigen::SparseMatrix<double> hmatrix = fixed_bosons_hamiltonian(neighbours, basis, tags, m, bosons, J, U, mu);
+        auto [fixed_tags, fixed_basis] = fixed_set_basis(m, bosons);
+        Eigen::SparseMatrix<double> hmatrix = fixed_bosons_hamiltonian(neighbours, fixed_basis, fixed_tags, m, bosons, J, U, mu);
         hamiltonians.push_back(hmatrix);
         total_dimension += hmatrix.rows();
     }

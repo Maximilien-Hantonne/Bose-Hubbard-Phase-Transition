@@ -72,11 +72,3 @@ endif()
 #else (DOXYGEN_FOUND)
     #message(STATUS "Doxygen not found, unable to generate documentation")
 #endif (DOXYGEN_FOUND)
-
-
-# ========== Qt =========
-#find_package(Qt5 COMPONENTS Core Gui Widgets REQUIRED)
-#qt_standard_project_setup()
-#qt_add_executable(project main.cpp)
-#target_link_libraries(${PROJECT_NAME} Qt5::Core Qt5::Gui Qt5::Widgets)
-

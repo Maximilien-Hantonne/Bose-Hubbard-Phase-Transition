@@ -70,10 +70,18 @@ public:
     * 
     * @param m Number of sites in the lattice.
     * @param n Number of bosons in the lattice.
-    * @param basis Matrix to store the basis.
-    * @return Eigen::VectorXd The tags of the basis.
+    * @return std::pair<Eigen::VectorXd, Eigen::MatrixXd> The tags and the basis.
     */
-    static std::pair<Eigen::VectorXd, Eigen::MatrixXd> set_basis(int m, int n);
+    static std::pair<Eigen::VectorXd, Eigen::MatrixXd> fixed_set_basis(int m, int n);
+
+    /**
+    * @brief Set the basis of the Hilbert space.
+    *
+    * @param m Number of sites in the lattice.
+    * @param n The maximum number of bosons in the lattice.
+    * @return std::pair<Eigen::VectorXd, Eigen::MatrixXd> The tags and the basis.
+    */
+    static std::pair<Eigen::VectorXd, Eigen::MatrixXd> max_set_basis(int m, int n);
     
 // HAMILTONIAN MATRICES
 

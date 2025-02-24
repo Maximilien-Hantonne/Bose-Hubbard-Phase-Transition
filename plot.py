@@ -172,7 +172,7 @@ def update_pca(frame):
 ani_pca = animation.FuncAnimation(fig, update_pca, frames=len(pca_matrices), blit=False, repeat=False)
 
 # Save the PCA animation
-ani_pca.save(os.path.join(output_dir, 'pca_animation.gif'), writer='pillow', fps=2)
+ani_pca.save(os.path.join(output_dir, 'pca_animation.gif'), writer='pillow', fps=1.5)
 
 plt.show()
 
@@ -211,6 +211,6 @@ def update_spdm(frame):
 ani_spdm = animation.FuncAnimation(fig, update_spdm, frames=len(spdm_matrices), blit=False, repeat=False)
 
 # Save the SPDM animation
-ani_spdm.save(os.path.join(output_dir, 'spdm_matrices.gif'), writer='pillow', fps=2)
+ani_spdm.save(os.path.join(output_dir, 'spdm_matrices.gif'), writer='pillow', fps=1.5)
 
 plt.show()
