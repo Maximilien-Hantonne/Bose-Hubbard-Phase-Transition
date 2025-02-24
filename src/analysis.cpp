@@ -6,6 +6,7 @@
 #include <fstream>
 #include <numeric>
 #include <iostream>
+#include <algorithm>
 
 #include <Eigen/Dense>
 #include <Eigen/SparseCore>
@@ -32,8 +33,9 @@
 /* Main function for the mean-field calculations */
 void Analysis::mean_field_parameters(int n, double J, double mu, double r){
 
+    n = 1000;
     double J_min = J; 
-    double J_max = J + r;
+    double J_max = J + 0.25;
     double dJ = (J_max - J_min) / n;
     double mu_min = mu;
     double mu_max = mu + r;
@@ -54,7 +56,8 @@ void Analysis::mean_field_parameters(int n, double J, double mu, double r){
             file << mu << " " << J << " " << SCMF(mu, J, q, psi0) << std::endl;
         }
     }
-    
+
+    std::cout << "*** End: Mean-field self-consistent method ***" << std::endl;
     Resource::timer(); // stop the timer
     Resource::get_memory_usage(true); // get the memory usage
 
@@ -113,7 +116,7 @@ double Analysis::SCMF(double mu, double J, int q ,double psi0)
         [[maybe_unused]] int nconv = eigs.compute(Spectra::SortRule::SmallestAlge);
         if (eigs.info() != Spectra::CompInfo::Successful) { // verify if the eigen search is a success
             // throw std::runtime_error("Eigenvalue computation for the mean-field single particle hamiltonian failed.");
-            return -1.0;
+            return 1.0;
         }
         else{
             phi0 = eigs.eigenvectors().col(0); // GS eigenvector
@@ -228,7 +231,7 @@ void Analysis::calculate_and_save(const Eigen::MatrixXd& basis, const Eigen::Vec
     std::vector<double> compressibility_values(num_param1 * num_param2);
     Eigen::MatrixXcd eigenvectors;
     Eigen::MatrixXd matrix_ratios(num_param1 * num_param2, nb_eigen -2);
-    std::vector<Eigen::MatrixXd> spdm_matrices(num_param1 * num_param2);
+    std::vector<Eigen::MatrixXd> spdm_matrices;
     double variance_threshold_percent = 1e-8;
 
     while (true) {
@@ -252,9 +255,9 @@ void Analysis::calculate_and_save(const Eigen::MatrixXd& basis, const Eigen::Vec
                 density = std::real(spdm.trace());
                 K = fluctuations(spdm);
 
-                normalize_spdm(spdm);
+                // normalize_spdm(spdm);
 
-                int index = i * num_param2 + j;
+                int index = i * num_param1 + j;
                 
                 #pragma omp critical
                 {
@@ -264,7 +267,10 @@ void Analysis::calculate_and_save(const Eigen::MatrixXd& basis, const Eigen::Vec
                     boson_density_values[index] = density;
                     compressibility_values[index] = K;
                     matrix_ratios.row(index) = vec_ratios;
-                    spdm_matrices[index] = spdm.real();
+                    if(j==num_param2-i-1){
+                        spdm_matrices.push_back(spdm.real());
+                    }
+                    
                 }
             }
         }
@@ -295,9 +301,11 @@ void Analysis::calculate_and_save(const Eigen::MatrixXd& basis, const Eigen::Vec
     std::vector<double> dispersions;
     std::vector<Eigen::VectorXi> cluster_labels;
 
-    for (int start_row = 0; start_row < matrix_ratios.rows()-6; start_row += 6) {
-        int end_row = std::min(start_row + 6, static_cast<int>(matrix_ratios.rows()));
-        Eigen::MatrixXd sub_matrix = matrix_ratios.block(start_row, 0, end_row - start_row, matrix_ratios.cols());
+    int num_rows = 10;
+    for (int i = 0; i < param1_max; ++i) {
+        int start_row = static_cast<int>(std::max(param2_max - num_rows - i * (param2_max - num_rows) / param1_max, 0.0));
+        int end_row = static_cast<int>(std::max(param2_max - i * (param2_max - num_rows) / param1_max, 0.0 + num_rows));
+        Eigen::MatrixXd sub_matrix = matrix_ratios.block(i + start_row, 0, i + end_row, matrix_ratios.cols());
 
         sub_matrix = standardize_matrix(sub_matrix);
         sub_matrix = (sub_matrix.adjoint() * sub_matrix) / double(sub_matrix.rows() - 1);
