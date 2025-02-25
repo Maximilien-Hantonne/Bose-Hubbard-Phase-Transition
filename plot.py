@@ -92,10 +92,10 @@ plt.title(wrap_title('Boson Density with respect to {} and {}'.format(x_label, y
 # Plot the heatmap for compressibility
 plt.subplot(1, 3, 3)
 contour3 = plt.contourf(x_grid, y_grid, compressibility.reshape(len(y_unique), len(x_unique)), levels=50, cmap='viridis')
-cbar3 = plt.colorbar(contour3, label='Fluctuations in Boson Density')
+cbar3 = plt.colorbar(contour3, label='Coherence in Boson Density')
 plt.xlabel(x_label)
 plt.ylabel(y_label)
-plt.title(wrap_title('Fluctuations with respect to {} and {}'.format(x_label, y_label)), fontsize=12)
+plt.title(wrap_title('Coherence with respect to {} and {}'.format(x_label, y_label)), fontsize=12)
 
 # Save the plot
 plt.savefig(os.path.join(output_dir, 'phase_map.png'))

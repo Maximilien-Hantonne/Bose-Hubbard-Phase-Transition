@@ -174,4 +174,4 @@ Feel free to contribute to our project
 
 ## License
 
-This project is licensed under the GNU GPLv3 - see LICENCE file for details
+This project is licensed under the GNU GPLv3 - see [LICENCE](https://github.com/Maximilien-Hantonne/Bose-Hubbard-Phase-Transition/blob/main/LICENSE) file for details.

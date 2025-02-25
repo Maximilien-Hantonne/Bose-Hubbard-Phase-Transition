@@ -13,7 +13,7 @@
  */
 
 class BH {
-protected:
+private:
 
     friend class Analysis;
 
@@ -66,7 +66,7 @@ public:
 // BASIS
 
     /**
-    * @brief Set the basis of the Hilbert space.
+    * @brief Set the Fock states basis of the Hilbert space with a fixed number of bosons.
     * 
     * @param m Number of sites in the lattice.
     * @param n Number of bosons in the lattice.
@@ -75,7 +75,7 @@ public:
     static std::pair<Eigen::VectorXd, Eigen::MatrixXd> fixed_set_basis(int m, int n);
 
     /**
-    * @brief Set the basis of the Hilbert space.
+    * @brief Set the Fock states basis of the Hilbert space with a varying number of bosons.
     *
     * @param m Number of sites in the lattice.
     * @param n The maximum number of bosons in the lattice.

@@ -52,7 +52,7 @@ private:
     static Eigen::MatrixXcd density_matrix(const Eigen::VectorXcd eigenvalues, Eigen::MatrixXcd& eigenvectors, double temperature);
 
     /* Calculate the compressibility of the system */
-    static double fluctuations(const Eigen::MatrixXcd& spdm);
+    static double coherence(const Eigen::MatrixXcd& spdm);
 
     /* Normalize the spdm to the distance between each site */
     static void normalize_spdm(Eigen::MatrixXcd& spdm);
@@ -92,18 +92,18 @@ public:
      * @param n Number of bosons.
      * @param J Hopping parameter.
      * @param mu Chemical potential.
-     * @param r Range for varying parameters.
+     * @param r Range of varying parameters.
      */
     static void mean_field_parameters(int n, double J, double mu, double r);
 
     /**
-     * @brief Calculate the mean gap ratio, boson density, and compressibility with exact methods
+     * @brief Calculate the mean gap ratio, boson density, and fluctuations with exact methods
      *
      * @param J Hopping parameter.
      * @param U Interaction parameter.
      * @param mu Chemical potential.
-     * @param s Range for varying parameters.
-     * @param r Step for varying parameters (with s < r).
+     * @param s Range of varying parameters.
+     * @param r Step of varying parameters (with s < r).
      * @param fixed_param Fixed parameter (J, U, or mu).
      */
     static void exact_parameters(int m, int n, double J, double U, double mu, double s, double r,std::string fixed_param);
