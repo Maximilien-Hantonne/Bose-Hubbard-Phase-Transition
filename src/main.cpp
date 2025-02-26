@@ -12,6 +12,22 @@
 
 #include "analysis.hpp"
 
+/**
+ * @file main.cpp
+ * @brief Main file for the Bose-Hubbard Phase Transition program.
+ *
+ * This file contains the main function and the command-line argument parsing
+ * for the Bose-Hubbard Phase Transition program. The program calculates the
+ * phase transition parameters for the Bose-Hubbard model using either exact
+ * diagonalization or mean-field theory.
+ *
+ * The program accepts various command-line options to set up the parameters
+ * for the model and to specify the type of calculation to be performed.
+ *
+ * The results of the calculations are plotted using Python scripts.
+ *
+
+
 
 /**
  * @brief Print the usage information for the program.
@@ -24,10 +40,12 @@ void print_usage() {
               << "  -J, --hopping     Hopping parameter\n"
               << "  -U, --interaction On-site interaction\n"
               << "  -u, --potential   Chemical potential\n"
-              << "  -r, --range     Range for varying parameters\n"
+              << "  -r, --range     Range for varying parameters (if range is the same for each)\n"
               << "  -s, --step      Step for varying parameters (with s < r)\n"
               << "  -f --fixed      Fixed parameter (J, U or u) \n"
-              << "  -t, --type      Type of calculation (exact or mean)\n";
+              << "  -t, --type      Type of calculation (exact or mean)\n"
+              << "  -i, --iterations  Number of iterations over the parameters in the mean-field approximation\n"
+              << "  -e, --epsilon  Threshold for convergence in the mean-field approximation\n";
 }
 
 /**
@@ -57,11 +75,13 @@ void print_usage() {
  * - `-J, --hopping`: Hopping parameter.
  * - `-U, --interaction`: On-site interaction parameter.
  * - `-u, --potential`: Chemical potential.
- * - `-r, --range`: Range for chemical potential and interaction.
+ * - `-r, --range`: Range for varying parameters
  * - `-s, --step`: Step for chemical potential and interaction.
  * - `-f, --fixed`: Fixed parameter (J, U, or u).
  * - `-t, --type`: Type of calculation (exact or mean).
  * - `-h, --help`: Display usage information.
+ * - `-i, --iterations`: Number of iterations over parameters in the mean-field approximation.
+ * - `-e, --epsilon`: Threshold for convergence in the mean-field approximation
  * 
  * @return int Exit status of the program.
  * @warning s must be smaller than r.
@@ -73,11 +93,11 @@ int main(int argc, char *argv[]) {
     copyright_warranty();
 
     // PARAMETERS OF THE MODEL
-    int m, n;
+    int m, n, i, eps;
     double J, U, mu, s, r;
     std::string fixed_param, calc_type;
 
-    const char* const short_opts = "m:n:J:U:u:r:s:f:h";
+    const char* const short_opts = "m:n:J:U:u:r:s:f:t:i:e:h";
     const option long_opts[] = {
         {"sites", required_argument, nullptr, 'm'},
         {"bosons", required_argument, nullptr, 'n'},
@@ -88,6 +108,8 @@ int main(int argc, char *argv[]) {
         {"step", required_argument, nullptr, 's'},
         {"fixed", required_argument, nullptr, 'f'},
         {"type", required_argument, nullptr, 't'},
+        {"iterations", required_argument, nullptr, 'i'},
+        {"epsilon", required_argument, nullptr, 'e'},
 		{"help", no_argument, nullptr, 'h'},
         {nullptr, no_argument, nullptr, 0}
     };
@@ -122,6 +144,12 @@ int main(int argc, char *argv[]) {
                 break;
             case 't':
                 calc_type = optarg;
+                break;
+            case 'i':
+                i = std::stod(optarg);
+                break;
+            case 'e': 
+                eps = std::stod(optarg); 
                 break;
             case 'h':
             default:
@@ -161,7 +189,7 @@ int main(int argc, char *argv[]) {
     else if (calc_type == "mean"){
 
         // Calculate the mean-field parameters
-        Analysis::mean_field_parameters(n, J, mu, r);
+        Analysis::mean_field_parameters(i, eps);
         
         // Execute the Python script to plot the results
         auto run_python_script = []() -> int {

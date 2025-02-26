@@ -19,7 +19,7 @@ using namespace Spectra;
     /* IMPLICITLY RESTARTED LANCZOS METHOD (IRLM) */
 
 /* implement the IRLM for a sparse matrix to find the smallest nb_eigen eigenvalues of a sparse matrix */
-Eigen::VectorXcd Operator::IRLM_eigen(Eigen::SparseMatrix<double> O,int nb_eigen, Eigen::MatrixXcd& eigenvectors) {
+Eigen::VectorXcd Op::IRLM_eigen(Eigen::SparseMatrix<double> O,int nb_eigen, Eigen::MatrixXcd& eigenvectors) {
     SparseGenMatProd<double> op(O); // create a compatible matrix object
     GenEigsSolver<SparseGenMatProd<double>> eigs(op, nb_eigen, 2 * nb_eigen+1); // create an eigen solver object
     eigs.init();
@@ -36,7 +36,7 @@ Eigen::VectorXcd Operator::IRLM_eigen(Eigen::SparseMatrix<double> O,int nb_eigen
     /* FULL ORTHOGONALIZATION LANCZOS METHOD (FOLM) */
 
 /* implement the FOLM for a sparse matrix for nb_iter iterations starting with vector v_0 */
-void Operator::FOLM_diag(Eigen::SparseMatrix<double> O, int nb_iter, Eigen::VectorXd& v_0, Eigen::MatrixXd& T, Eigen::MatrixXd& V) {
+void Op::FOLM_diag(Eigen::SparseMatrix<double> O, int nb_iter, Eigen::VectorXd& v_0, Eigen::MatrixXd& T, Eigen::MatrixXd& V) {
     T.resize(nb_iter, nb_iter); //resize the matrix T to a matching size
     V.resize(O.size(), nb_iter); //resize the matrix V to a matching size
 
@@ -71,7 +71,7 @@ void Operator::FOLM_diag(Eigen::SparseMatrix<double> O, int nb_iter, Eigen::Vect
 }
 
 /* Calculate the approximate eigenvalues and eigenvectors of the hamiltonian using the Lanczos algorithm */
-Eigen::VectorXd Operator::FOLM_eigen(Eigen::SparseMatrix<double> O, int nb_iter, Eigen::MatrixXd& eigenvectors){
+Eigen::VectorXd Op::FOLM_eigen(Eigen::SparseMatrix<double> O, int nb_iter, Eigen::MatrixXd& eigenvectors){
     Eigen::MatrixXd V(O.size(), nb_iter); // initialize the matrix V of vectors of the Krylov basis
     Eigen::MatrixXd T(nb_iter,nb_iter); // initialize the tridiagonal matrix T
     Eigen::VectorXd v_0 = Eigen::VectorXd::Random(O.size()); // initialize a random vector v_0
@@ -89,7 +89,7 @@ Eigen::VectorXd Operator::FOLM_eigen(Eigen::SparseMatrix<double> O, int nb_iter,
     /* EXACT DIAGONALIZATION */
 
 /* Calculate the exact eigenvalues and eigenvectors of the hamiltonian by an exact diagonalization */
-Eigen::VectorXd Operator::exact_eigen(Eigen::SparseMatrix<double> O, Eigen::MatrixXd& eigenvectors) {
+Eigen::VectorXd Op::exact_eigen(Eigen::SparseMatrix<double> O, Eigen::MatrixXd& eigenvectors) {
     Eigen::MatrixXd dense_smat = Eigen::MatrixXd(O); // convert sparse matrix to dense matrix
     Eigen::SelfAdjointEigenSolver<Eigen::MatrixXd> eigensolver(dense_smat); // solve the eigen problem for the hamiltonian
     if (eigensolver.info() != Eigen::Success) { // verify if the eigen search is a success

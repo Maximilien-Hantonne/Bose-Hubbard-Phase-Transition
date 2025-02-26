@@ -6,6 +6,18 @@
 #include "hamiltonian.hpp"
 
 
+/* Create the mean-field Hamiltonian */
+/**
+ * @file hamiltonian.cpp
+ * @brief Implementation of the Bose-Hubbard model mean-field Hamiltonian.
+ *
+ * This file implements the Fock state basis and the Bose-Hubbard hamiltonian in that basis, 
+ * using sparse matrices.
+ * It also implements the mean-field Bose-Hubbard hamiltonian.
+ */
+
+
+
 /////  IMPLEMENTATION OF THE BH CLASS METHODS  /////
 
     
@@ -275,8 +287,6 @@ Eigen::SparseMatrix<double> BH::max_bosons_hamiltonian(const std::vector<std::ve
     return combined_hamiltonian;
 }
 
-
-/* Create the mean-field Hamiltonian */
 void BH::h_MF (double psi, int p, double mu, double J, int q, Eigen::MatrixXd& h){
     // fill diagonal elements
     for (int i=0; i<2*p+1; i++)

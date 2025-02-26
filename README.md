@@ -157,9 +157,9 @@ Make sure you have the required dependencies installed. You can then launch the 
 ```
 
 #### For mean-field calculations:
-The parameters are not required in the simulation and don't need to be specified. You only need to precise the `mean` in the command-line options and choose the other parameters randomly. For example :
+The parameters are not required in the simulation and don't need to be specified. For example if you want to compute again the phase diagram in the mean-field approximation (see the figures), you want to compute 1000 iterations over $\mu$ and $J$ and a precision for convergence $\epsilon = 10^{-6}$. The command line to do so is the following:
 ```sh
-./QuantumProject -n 1000 -J 0 -rJ 0.25 -u 0 -ru 4 --t "mean"
+./QuantumProject -i 1000 -e 6 --t "mean"
 ```
 
 ## Authors

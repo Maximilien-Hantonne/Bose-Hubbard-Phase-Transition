@@ -25,20 +25,43 @@
 
 
 
+/**
+ * @file analysis.cpp
+ * @brief Implementation of analysis functions for the Bose-Hubbard model.
+ *
+ * This file contains the implementation of various analysis functions for the Bose-Hubbard model,
+ * including mean-field calculations, exact calculations, and utility functions.
+ *
+ * The main functions provided in this file are:
+ * - Analysis::mean_field_parameters: Computes the phase diagram of the Bose-Hubbard model in the mean-field approximation.
+ * - Analysis::exact_parameters: Main function for exact calculations parameters.
+ */
+
 
 
                    ////// MEAN-FIELD CALCULATIONS /////
 
+/**
+ * @brief Main function for the mean-field computation. Computes the phase diagram of the Bose-Hubbard model in the mean-field approximation.
+ *
+ * This function computes the values of the Superfluid order parameter Psi over a range of values for J and mu,
+ * and writes the results to a file named "mean_field.txt". It uses a self-consistent
+ * mean-field (SCMF) method to determine the parameters.
+ *
+ * @param n The number of steps for the parameter sweep.
+ * @param J The initial value of the hopping parameter.
+ * @param mu The initial value of the chemical potential.
+ * @param r The range for the chemical potential sweep.
+ */
 
-/* Main function for the mean-field calculations */
-void Analysis::mean_field_parameters(int n, double J, double mu, double r){
 
-    n = 1000;
-    double J_min = J; 
-    double J_max = J + 0.25;
+void Analysis::mean_field_parameters(int n, int precision){
+
+    double J_min = 0; 
+    double J_max = 0.25;
     double dJ = (J_max - J_min) / n;
-    double mu_min = mu;
-    double mu_max = mu + r;
+    double mu_min = 0;
+    double mu_max = 4;
     double dmu = (mu_max - mu_min) / n;
     double q = 1;
 
@@ -53,13 +76,14 @@ void Analysis::mean_field_parameters(int n, double J, double mu, double r){
     for (double mu : tqdm::range(mu_min, mu_max, dmu)) {
         for (double J : tqdm::range(J_min, J_max, dJ)) {
             double psi0 = dis(gen); 
-            file << mu << " " << J << " " << SCMF(mu, J, q, psi0) << std::endl;
+            file << mu << " " << J << " " << SCMF(mu, J, q, psi0, precision) << std::endl;
         }
     }
 
     std::cout << "*** End: Mean-field self-consistent method ***" << std::endl;
     Resource::timer(); // stop the timer
     Resource::get_memory_usage(true); // get the memory usage
+    std::cout << "*** End: Mean-field self-consistent method ***" << std::endl;
 
     file.close();
 }
@@ -84,7 +108,7 @@ Parameters:
 - J = J/U 
 - q : number of neighbours of a site i in the specific lattice studied
 - psi0: initial ansatz for the superfluid order parameter */
-double Analysis::SCMF(double mu, double J, int q ,double psi0)
+double Analysis::SCMF(double mu, double J, int q ,double psi0, int precision)
 {
     double psi = psi0; // initial ansatz for the superfluid order parameter
     double psi_new = psi0; // new ansatz for the superfluid order parameter
@@ -95,7 +119,7 @@ double Analysis::SCMF(double mu, double J, int q ,double psi0)
     int N_itt=1; 
     int N_itt_inner; // number of iterations
     int p; 
-    double eps = 1e-6; // precision of the convergence
+    double eps = pow(10, -precision); // precision of the convergence
 
     Eigen::MatrixXd h(1000, 1000); // alllocation of a huge dense matrix, in which we will store the iterative
                                    // single particle hamiltonian in the mean-field approximation
@@ -161,6 +185,23 @@ double Analysis::SCMF(double mu, double J, int q ,double psi0)
 
 
         /* MAIN FUNCTIONS */
+
+/**
+ * @brief Main function for exact calculations parameters.
+ *
+ * This function performs exact calculations for the Bose-Hubbard model parameters.
+ * It sets up the lattice geometry, constructs the Hamiltonian matrices, and calculates
+ * various physical quantities over a range of parameters. The results are saved to files.
+ *
+ * @param m The number of lattice sites.
+ * @param n The number of bosons.
+ * @param J The hopping parameter.
+ * @param U The on-site interaction parameter.
+ * @param mu The chemical potential.
+ * @param s The step size for the parameter sweep.
+ * @param r The range for the parameter sweep.
+ * @param fixed_param The parameter to be fixed during the calculations ("J", "U", or "mu").
+ */
 
 /*main function for exact calculations parameters*/
 void Analysis::exact_parameters(int m, int n, double J,double U, double mu, double s, double r, std::string fixed_param) {
@@ -264,7 +305,7 @@ void Analysis::calculate_and_save(const Eigen::MatrixXd& basis, const Eigen::Vec
                 Eigen::SparseMatrix<double> H = H_fixed + H1 * param1 + H2 * param2;
 
                 // Diagonalization
-                Eigen::VectorXcd eigenvalues = Operator::IRLM_eigen(H, nb_eigen, eigenvectors);
+                Eigen::VectorXcd eigenvalues = Op::IRLM_eigen(H, nb_eigen, eigenvectors);
 
                 // Gap ratios
                 Eigen::VectorXd vec_ratios = gap_ratios(eigenvalues, nb_eigen);
