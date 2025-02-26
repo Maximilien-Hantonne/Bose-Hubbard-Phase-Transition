@@ -8,9 +8,6 @@
 #include "resource.hpp"
 
 
-std::chrono::high_resolution_clock::time_point Resource::start_time;
-bool Resource::is_running = false;
-
 
 // MEMORY USAGE :
 

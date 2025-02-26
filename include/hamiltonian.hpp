@@ -5,17 +5,8 @@
 #include<Eigen/SparseCore> 
 #include "Eigen/src/Core/Matrix.h"
 
-
-/**
- * @brief Class representing the Bose-Hubbard Hamiltonian.
- * 
- * This class implements the Hamiltonian for the Bose-Hubbard model, which describes interacting bosons on a lattice.
- */
-
-class BH {
-private:
-
-    friend class Analysis;
+namespace BH
+{
 
 // DIMENSION OF THE HILBERT SPACE
 
@@ -39,16 +30,16 @@ private:
 // SORT THE HILBERT SPACE BASIS TO FACILITATE CALCULUS
 
     /* calculate the unique tag of the kth column of the matrix */
-    static double calculate_tag(const Eigen::MatrixXd& basis, const std::vector<int>& primes, int k);
+    double calculate_tag(const Eigen::MatrixXd& basis, const std::vector<int>& primes, int k);
 
     /* calculate and store the tags of each state of the Hilbert space basis */
-    static Eigen::VectorXd calculate_tags(const Eigen::MatrixXd& basis, const std::vector<int>& primes);
+    Eigen::VectorXd calculate_tags(const Eigen::MatrixXd& basis, const std::vector<int>& primes);
 
     /* sort the states of the Hilbert space by ascending order compared by their tags */
     static void sort_basis(Eigen::VectorXd& tags, Eigen::MatrixXd& basis); 
 
     /* gives the index of the wanted tag x by the Newton method */
-    static int search_tag(const Eigen::VectorXd& tags, double x);
+    int search_tag(const Eigen::VectorXd& tags, double x);
 
 // FILL THE HAMILTONIAN OF THE SYSTEM
 
@@ -61,8 +52,6 @@ private:
     /* fill the chemical potential term of the Hamiltonian */
     static void fill_chemical(const Eigen::MatrixXd& basis, Eigen::SparseMatrix<double>& hmatrix, double mu); 
 
-public:
-
 // BASIS
 
     /**
@@ -72,7 +61,7 @@ public:
     * @param n Number of bosons in the lattice.
     * @return std::pair<Eigen::VectorXd, Eigen::MatrixXd> The tags and the basis.
     */
-    static std::pair<Eigen::VectorXd, Eigen::MatrixXd> fixed_set_basis(int m, int n);
+    std::pair<Eigen::VectorXd, Eigen::MatrixXd> fixed_set_basis(int m, int n);
 
     /**
     * @brief Set the Fock states basis of the Hilbert space with a varying number of bosons.
@@ -81,7 +70,7 @@ public:
     * @param n The maximum number of bosons in the lattice.
     * @return std::pair<Eigen::VectorXd, Eigen::MatrixXd> The tags and the basis.
     */
-    static std::pair<Eigen::VectorXd, Eigen::MatrixXd> max_set_basis(int m, int n);
+    std::pair<Eigen::VectorXd, Eigen::MatrixXd> max_set_basis(int m, int n);
     
 // HAMILTONIAN MATRICES
 
@@ -95,7 +84,7 @@ public:
     * @param U Interaction parameter of the BH model.
     * @param mu Chemical potential of the BH model.
     */
-    static Eigen::SparseMatrix<double> fixed_bosons_hamiltonian(const std::vector<std::vector<int>>& neighbours, const Eigen::MatrixXd& basis, const Eigen::VectorXd& tags, int m, int n, double J, double U, double mu);
+    Eigen::SparseMatrix<double> fixed_bosons_hamiltonian(const std::vector<std::vector<int>>& neighbours, const Eigen::MatrixXd& basis, const Eigen::VectorXd& tags, int m, int n, double J, double U, double mu);
 
     /**
     * @brief Create the Hamiltonian matrix for the Bose-Hubbard model with a varying number of bosons.
@@ -108,7 +97,7 @@ public:
     * @param mu Chemical potential of the BH model.
     * @return Eigen::SparseMatrix<double> The Hamiltonian matrix.
     */
-    static Eigen::SparseMatrix<double> max_bosons_hamiltonian(const std::vector<std::vector<int>>& neighbours, int m, int n_min, int n_max, double J, double U, double mu);
+    Eigen::SparseMatrix<double> max_bosons_hamiltonian(const std::vector<std::vector<int>>& neighbours, int m, int n_min, int n_max, double J, double U, double mu);
 
     /**
     * @brief Create the mean-field Hamiltonian.
@@ -120,7 +109,7 @@ public:
     * @param q Coordination number.
     * @param h Matrix to store the Hamiltonian.
     */
-    static void h_MF(double psi, int p, double mu, double J, int q, Eigen::MatrixXd& h);
+    void h_MF(double psi, int p, double mu, double J, int q, Eigen::MatrixXd& h);
 
-}; 
+} 
 
