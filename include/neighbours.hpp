@@ -7,7 +7,6 @@
 /**
  * @brief Class to generate the list of neighbours for a 1D chain, 2D square lattice, or 3D cubic lattice.
  * 
- * @warning This class is not thread-safe.
  */
 
 class Neighbours {

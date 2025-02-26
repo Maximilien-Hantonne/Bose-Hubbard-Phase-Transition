@@ -30,6 +30,18 @@ void print_usage() {
               << "  -t, --type      Type of calculation (exact or mean)\n";
 }
 
+/**
+ * @brief Print the copyright and warranty information.
+ */
+ void copyright_warranty() {
+    std::cout << "======================================\n";
+    std::cout << "Bose-Hubbard Phase Transition\n";
+    std::cout << "Copyright (C) 2025 by Maximilien HANTONNE, Rémy LYSCAR and Alexandre MENARD\n";
+    std::cout << "This program is licensed under the GNU General Public License v3.0.\n";
+    std::cout << "For more details, see the LICENSE file.\n";
+    std::cout << "======================================\n\n\n";
+}
+
 
 /**
  * @brief Main function for the Bose-Hubbard Phase Transition program.
@@ -56,6 +68,9 @@ void print_usage() {
  */
 
 int main(int argc, char *argv[]) {
+
+    // Print the copyright and warranty information
+    copyright_warranty();
 
     // PARAMETERS OF THE MODEL
     int m, n;
@@ -138,10 +153,6 @@ int main(int argc, char *argv[]) {
             return system("python3 plot.py");
         };
         std::future<int> result = std::async(std::launch::async, run_python_script);
-        if (result.wait_for(std::chrono::seconds(30)) == std::future_status::timeout) {
-            std::cerr << "Error: Python script took too long to execute." << std::endl;
-            return 1;
-        }
         if (result.get() != 0) {
             std::cerr << "Error when executing Python script." << std::endl;
             return 1;
@@ -157,10 +168,6 @@ int main(int argc, char *argv[]) {
             return system("python3 plot_mean_field.py");
         };
         std::future<int> result = std::async(std::launch::async, run_python_script);
-        if (result.wait_for(std::chrono::seconds(30)) == std::future_status::timeout) {
-            std::cerr << "Error: Python script took too long to execute." << std::endl;
-            return 1;
-        }
         if (result.get() != 0) {
             std::cerr << "Error when executing Python script." << std::endl;
             return 1;

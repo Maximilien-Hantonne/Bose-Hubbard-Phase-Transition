@@ -24,7 +24,26 @@ add_executable(${PROJECT_NAME} ${SRC_FILES})
 # ======== Optimization ========
 # Enable compiler optimizations
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=native -Wno-deprecated-declarations")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=native")
+endif()
+
+
+# ======== Disable All Warnings ========
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    target_compile_options(${PROJECT_NAME} PRIVATE -w)
+    # Additional flags to suppress specific Clang warnings
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        target_compile_options(${PROJECT_NAME} PRIVATE
+            -Wno-analyzer-too-complex
+            -Wno-analyzer-infinite-loop
+            -Wno-analyzer-null-dereference
+            -Wno-analyzer-deadcode
+            -Wno-analyzer-undefined-retval
+            -Wno-analyzer-undefined-behavior
+        )
+    endif()
+elseif(MSVC)
+    target_compile_options(${PROJECT_NAME} PRIVATE /W0)
 endif()
 
 
@@ -36,34 +55,3 @@ if(OpenMP_CXX_FOUND)
 else()
     message(WARNING "OpenMP not found, parallelization disabled")
 endif()
-
-
-# ======== Doxygen ========
-#find_package(Doxygen)
-#if (DOXYGEN_FOUND)
-#set(DOXYGEN_IN ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile)
-#set(DOXYGEN_OUT ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
-#configure_file(${DOXYGEN_IN} ${DOXYGEN_OUT} @ONLY)
-#add_custom_target(doc_doxygen
-#COMMAND ${DOXYGEN_EXECUTABLE} ${DOXYGEN_OUT}
-#WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-#COMMENT "Generating API documentation with Doxygen"
-# VERBATIM
-#)
-#else (DOXYGEN_FOUND)
-    #message(STATUS "Doxygen not found, unable to generate documentation")
-#endif (DOXYGEN_FOUND)
-
-
-# ========== Qt =========
-#find_package(Qt5 COMPONENTS Core Gui Widgets REQUIRED)
-#qt_standard_project_setup()
-#qt_add_executable(project main.cpp)
-#target_link_libraries(${PROJECT_NAME} Qt5::Core Qt5::Gui Qt5::Widgets)
-
-
-
-# Add compiler warning flags
-target_compile_options(${PROJECT_NAME} PRIVATE -march=native)
-
-

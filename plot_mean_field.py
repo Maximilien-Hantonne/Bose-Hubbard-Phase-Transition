@@ -1,3 +1,6 @@
+import matplotlib
+matplotlib.use('TkAgg')
+
 import matplotlib.pyplot as plt
 import numpy as np
 import scienceplots 
@@ -43,6 +46,3 @@ plt.xlim(0,0.25)
 plt.tight_layout()
 plt.savefig(os.path.join(save_path, "mean_field_test4.svg"))
 plt.close(fig)
-
-
-

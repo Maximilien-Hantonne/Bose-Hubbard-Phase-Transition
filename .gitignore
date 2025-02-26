@@ -1,6 +1,3 @@
-# Ignore Doxygen configuration file
-Doxyfile
-
 #Ignore folders
 .cache/
 build/

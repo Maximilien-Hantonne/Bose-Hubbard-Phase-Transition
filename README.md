@@ -1,15 +1,23 @@
+<div align="center">
+    <a href="https://github.com/Maximilien-Hantonne/Bose-Hubbard-Phase-Transition">
+        <img src="https://github.com/Maximilien-Hantonne/Bose-Hubbard-Phase-Transition/blob/main/figures/mean_field/mean_field_plot.svg" alt="Bose-Hubbard Model Diagram" width="350">
+    </a>
+    <h3 align="center">Mott insulator to Superfluid transition</h3>
+    <p align="center">
+        An implementation of the Bose Hubbard model with exact and mean field calculations to characterize the phase of the system.
+    </p>
+</div>
+
 # Bose-Hubbard Phase Transition
 
 This repository contains the implementation of the Bose-Hubbard model, which describes interacting bosons on a lattice. The aim of this project is to study the phase transition in the Bose-Hubbard model using various numerical methods.
-
-<img src="https://github.com/Maximilien-Hantonne/Bose-Hubbard-Phase-Transition/blob/main/git%20chain.png" alt="Bose-Hubbard Model Diagram" width="200"/>
 
 ## Project Structure
 
 - `include/`: Contains the header files for the project.
   - `hamiltonian.hpp`: Defines the `BH` class representing the Bose-Hubbard Hamiltonian.
   - `neighbours.hpp`: Defines the `Neighbours` class for generating the list of neighbours for different lattice structures.
-  - `operator.hpp`: Defines the `Operator` class for various matrix operations and diagonalization methods.
+  - `operator.hpp`: Defines the `Operator` class for various matrix diagonalization methods.
   - `analysis.hpp`: Defines the `Analysis` class for calculating and saving physical quantities with an exact or a mean field approach.
   - `resource.hpp`: Defines the `Resource` class for utility functions for timing, memory usage and parallelization.
 
@@ -110,7 +118,7 @@ The project provides classes to represent the Bose-Hubbard Hamiltonian and to pe
 
 - `BH`: Represents the Bose-Hubbard Hamiltonian.
 - `Neighbours`: Generates the list of neighbours for different lattice structures i.e. the geometry of the lattice.
-- `Operator`: Provides various matrix operations and diagonalization methods.
+- `Operator`: Provides various matrix diagonalization methods.
 - `Analysis`: Computes the physical quantities for exact or mean-field approach of Bose-Hubbard model.
 
 ### Command-Line Options
@@ -143,11 +151,13 @@ Some already calculated plots can be seen in the [figures](https://github.com/Ma
 
 ### Launching the program (Linux)
 Make sure you have the required dependencies installed. You can then launch the program by typing for example :
+#### For exact calculations :
 ```sh
 ./QuantumProject -m 5 -n 5 -J 100 -U 0 -u 0 -r 100 -s 5 -f "J" --t "exact"
 ```
 
-The parameters not required in the simulation need not be specified. For example if you want to get the mean-field phase diagramm (in order to get the same figure as in figures/mean_field): 
+#### For mean-field calculations:
+The parameters are not required in the simulation and don't need to be specified. You only need to precise the `mean` in the command-line options and choose the other parameters randomly. For example :
 ```sh
 ./QuantumProject -n 1000 -J 0 -rJ 0.25 -u 0 -ru 4 --t "mean"
 ```
@@ -164,4 +174,4 @@ Feel free to contribute to our project
 
 ## License
 
-This project is licensed under the MIT License. See the LICENSE file for details.
+This project is licensed under the GNU GPLv3 - see [LICENCE](https://github.com/Maximilien-Hantonne/Bose-Hubbard-Phase-Transition/blob/main/LICENSE) file for details.
