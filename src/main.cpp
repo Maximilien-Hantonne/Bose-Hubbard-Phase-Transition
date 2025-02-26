@@ -24,7 +24,7 @@ void print_usage() {
               << "  -J, --hopping     Hopping parameter\n"
               << "  -U, --interaction On-site interaction\n"
               << "  -u, --potential   Chemical potential\n"
-              << "  -r, --range     Range for varying parameters\n"
+              << "  -r, --range     Range for varying parameters (if range is the same for each)\n"
               << "  -s, --step      Step for varying parameters (with s < r)\n"
               << "  -f --fixed      Fixed parameter (J, U or u) \n"
               << "  -t, --type      Type of calculation (exact or mean)\n";
@@ -45,7 +45,7 @@ void print_usage() {
  * - `-J, --hopping`: Hopping parameter.
  * - `-U, --interaction`: On-site interaction parameter.
  * - `-u, --potential`: Chemical potential.
- * - `-r, --range`: Range for chemical potential and interaction.
+ * - `-r, --range`: Range for varying parameters
  * - `-s, --step`: Step for chemical potential and interaction.
  * - `-f, --fixed`: Fixed parameter (J, U, or u).
  * - `-t, --type`: Type of calculation (exact or mean).

@@ -5,7 +5,7 @@ Doxyfile
 .cache/
 build/
 figures/test/
-
+docs/
 
 #Ignore various files
 *.o

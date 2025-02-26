@@ -68,9 +68,9 @@ private:
 public:
     
     /** 
-     * @brief Calculate the mean-field parameters with the self-consistent mean-field method.
+     * @brief Compute the phase diagram of the Bose_Hubbard model in the mean-field approximation, given parameters.
      * 
-     * @param n Number of bosons.
+     * @param n number of different values for both the chemical potential mu and the hopping parameter J.
      * @param J Hopping parameter.
      * @param mu Chemical potential.
      * @param r Range for varying parameters.
@@ -78,7 +78,7 @@ public:
     static void mean_field_parameters(int n, double J, double mu, double r);
 
     /**
-     * @brief Calculate the mean gap ratio, boson density, and compressibility with exact methods
+     * @brief Calculate the mean gap ratio, boson density, and compressibility with exact methods, given parameters.
      *
      * @param J Hopping parameter.
      * @param U Interaction parameter.

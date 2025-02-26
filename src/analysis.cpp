@@ -33,7 +33,7 @@ void Analysis::mean_field_parameters(int n, double J, double mu, double r){
 
     std::cout << "*** Start: Mean-field self-consistent method ***" << std::endl;
     double J_min = J; 
-    double J_max = J + 0.25;
+    double J_max = J + r;
     double dJ = (J_max - J_min) / n;
     double mu_min = mu;
     double mu_max = mu + r;
