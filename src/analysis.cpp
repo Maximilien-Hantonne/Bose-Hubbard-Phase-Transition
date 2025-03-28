@@ -256,6 +256,7 @@ void Analysis::exact_parameters(int m, int n, double J,double U, double mu, doub
     }
 
     // End of the calculations
+    std::cout << std::endl;
     Resource::timer();
     Resource::get_memory_usage(true);
 }
@@ -273,7 +274,7 @@ void Analysis::calculate_and_save(const Eigen::MatrixXd& basis, const Eigen::Vec
     file << fixed_value << std::endl;
 
     // Parameters for the calculations
-    int nb_eigen = 10;
+    int nb_eigen = 20;
     double temperature = 0.0;
 
     // Matrices initialization
@@ -287,6 +288,11 @@ void Analysis::calculate_and_save(const Eigen::MatrixXd& basis, const Eigen::Vec
     Eigen::MatrixXcd eigenvectors;
     Eigen::MatrixXd matrix_ratios(num_param1 * num_param2, nb_eigen -2);
     std::vector<Eigen::MatrixXd> spdm_matrices;
+
+    // Progress bar variables
+    std::atomic<int> progress_counter(0);
+    int total_iterations = num_param1 * num_param2;
+    const int progress_bar_width = 100;
 
     // Threshold for the loop
     double variance_threshold_percent = 1e-8;
@@ -322,10 +328,10 @@ void Analysis::calculate_and_save(const Eigen::MatrixXd& basis, const Eigen::Vec
                 }
                 density = std::real(spdm.trace());
 
-                // Normalize the spdm with the distance between each site
-                normalize_spdm(spdm);
-
                 K = coherence(spdm);
+
+                // Normalize the spdm with the distance between each site
+                // normalize_spdm(spdm);
 
                 int index = i * num_param1 + j;
                 
@@ -340,6 +346,10 @@ void Analysis::calculate_and_save(const Eigen::MatrixXd& basis, const Eigen::Vec
                     if(j == num_param2 - i - 1){
                         spdm_matrices.push_back(spdm.real());
                     }
+                    progress_counter++;
+                    int progress = (progress_counter * progress_bar_width) / total_iterations;
+                    std::string bar = "[" + std::string(progress, '#') + std::string(progress_bar_width - progress, ' ') + "]";
+                    std::cout << "\rProgress: " << bar << " " << std::setw(3) << (progress_counter * 100) / total_iterations << "% " << std::flush;
                 }
             }
         }
@@ -376,7 +386,7 @@ void Analysis::calculate_and_save(const Eigen::MatrixXd& basis, const Eigen::Vec
     std::vector<Eigen::VectorXi> cluster_labels;
 
     // Main loop for the PCA, dispersion, and clustering
-    int num_rows = 5;
+    int num_rows = 3;
     for (int i = 0; i < param1_max; ++i) {
 
         // Choose a subset of the matrix to analyze
