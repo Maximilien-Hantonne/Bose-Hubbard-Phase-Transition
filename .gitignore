@@ -1,7 +1,7 @@
 #Ignore folders
 .cache/
 build/
-figures/test/
+figures/
 docs/
 
 #Ignore various files
