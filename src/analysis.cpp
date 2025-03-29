@@ -7,6 +7,7 @@
 #include <numeric>
 #include <iostream>
 #include <algorithm>
+#include <iomanip>
 
 #include <Eigen/Dense>
 #include <Eigen/SparseCore>
@@ -69,7 +70,7 @@ void Analysis::mean_field_parameters(int n, int precision){
     std::mt19937 gen(rd()); // Mersenne Twister generator
     std::uniform_real_distribution<> dis(0.0, 1.0); // Uniform distribution in [0, 1]
 
-    std::ofstream file("mean_field.txt"); 
+    std::ofstream file("mean_field_final.txt"); 
 
     Resource::timer(); // start the timer
 
