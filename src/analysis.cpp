@@ -288,7 +288,8 @@ void Analysis::calculate_and_save(const Eigen::MatrixXd& basis, const Eigen::Vec
     std::vector<double> compressibility_values(num_param1 * num_param2);
     Eigen::MatrixXcd eigenvectors;
     Eigen::MatrixXd matrix_ratios(num_param1 * num_param2, nb_eigen -2);
-    std::vector<Eigen::MatrixXd> spdm_matrices;
+    std::vector<Eigen::MatrixXd> spdm_matrices; 
+
 
     // Progress bar variables
     std::atomic<int> progress_counter(0);
@@ -495,7 +496,7 @@ Eigen::MatrixXcd Analysis::SPDM(const Eigen::MatrixXd& basis, const Eigen::Vecto
     int m = basis.rows();
     Eigen::MatrixXcd spdm = Eigen::MatrixXcd::Zero(m, m);
 
-    // Calculate the braket for the ground state
+    // // Calculate the brakets for the ground state
     // Eigen::VectorXd phi0 = eigenvectors.col(0).real();
     // for (int i = 0; i < m; ++i) {
     //     for (int j = i; j < m; ++j) {
@@ -519,7 +520,8 @@ Eigen::MatrixXcd Analysis::SPDM(const Eigen::MatrixXd& basis, const Eigen::Vecto
         }
     }
 
-    return spdm/ eigenvectors.cols();
+    // return spdm/ eigenvectors.cols();
+    return spdm;
 }
 
 /* Normalize the spdm to the distance between each site */

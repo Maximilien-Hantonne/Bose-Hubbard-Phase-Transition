@@ -8,6 +8,9 @@ import textwrap
 import os
 
 
+plt.rc('text', usetex=True)
+plt.rc('font', family='serif')
+
 
 ################## PHASE MAP ##################
 
@@ -69,36 +72,21 @@ output_dir = f'../figures/exact/{fixed_param}_{fixed_value}_{non_fixed_param1}_{
 os.makedirs(output_dir, exist_ok=True)
 
 # Plot the heatmap for gap ratio
-plt.figure(figsize=(18, 6))
+fig1 = plt.figure(figsize=(11, 11))
 
-plt.subplot(1, 3, 1)
 contour1 = plt.contourf(x_grid, y_grid, gap_ratio.reshape(len(y_unique), len(x_unique)), levels=50, cmap='viridis')
 cbar1 = plt.colorbar(contour1, label='Gap Ratio')
+cbar1.ax.tick_params(labelsize=20)
 cbar1.ax.axhline(y=0.39, color='red', linestyle='solid', linewidth=3)
 cbar1.ax.axhline(y=0.53, color='red', linestyle='solid', linewidth=3)
-plt.xlabel(x_label)
-plt.ylabel(y_label)
-plt.title(wrap_title('Gap Ratio with respect to {} and {}'.format(x_label, y_label)), fontsize=12)
-plt.figtext(0.5, 0.01, 'Note: 0.39 is for a Poissonnian distribution and 0.53 is for a Gaussian orthogonal ensemble (GOE)', ha='center', fontsize=9, color='red')
-
-# Plot the heatmap for boson density
-plt.subplot(1, 3, 2)
-contour2 = plt.contourf(x_grid, y_grid, boson_density.reshape(len(y_unique), len(x_unique)), levels=50, cmap='viridis')
-cbar2 = plt.colorbar(contour2, label='Boson Density')
-plt.xlabel(x_label)
-plt.ylabel(y_label)
-plt.title(wrap_title('Boson Density with respect to {} and {}'.format(x_label, y_label)), fontsize=12)
-
-# Plot the heatmap for compressibility
-plt.subplot(1, 3, 3)
-contour3 = plt.contourf(x_grid, y_grid, compressibility.reshape(len(y_unique), len(x_unique)), levels=50, cmap='viridis')
-cbar3 = plt.colorbar(contour3, label='Coherence in Boson Density')
-plt.xlabel(x_label)
-plt.ylabel(y_label)
-plt.title(wrap_title('Coherence with respect to {} and {}'.format(x_label, y_label)), fontsize=12)
+plt.xlabel(x_label, fontsize = 35)
+plt.ylabel(y_label, fontsize = 35)
+cbar1.set_label(r'Gap ratio', fontsize=35)
 
 # Save the plot
-plt.savefig(os.path.join(output_dir, 'phase_map.png'))
+current_dir = os.path.dirname(os.path.realpath(__file__))
+save_path = os.path.join(current_dir, "..", "figures")
+plt.savefig(save_path, 'gap_ratio.svg')
 
 plt.tight_layout()
 plt.show()
