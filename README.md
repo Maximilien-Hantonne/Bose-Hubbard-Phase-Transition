@@ -10,7 +10,7 @@
 
 # Bose-Hubbard Phase Transition
 
-This repository contains the implementation of the Bose-Hubbard model, which describes interacting bosons on a lattice. The aim of this project is to study the phase transition in the Bose-Hubbard model using various numerical methods.
+This repository contains the implementation of the Bose-Hubbard model, which describes interacting bosons on a lattice. The aim of this project is to study the phase transition in the Bose-Hubbard model using various numerical methods. The theoretical and numerical tools used for this project are described in this [article](https://github.com/Maximilien-Hantonne/Bose-Hubbard-Phase-Transition/blob/main/Bose_Hubbard_Quantum_Phase_Transition.pdf).
 
 ## Project Structure
 
