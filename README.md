@@ -114,7 +114,7 @@ The PDF documentation will be generated in the `docs/latex` directory.
 
 ## Usage (Linux)
 
-The project provides classes to represent the Bose-Hubbard Hamiltonian and to perform various operations and calculations related to the model. The main classes are:
+The project provides classes to represent the Bose-Hubbard Hamiltonian and to perform various operations and calculations related to the model. The main goals of the files are:
 
 - `BH`: Represents the Bose-Hubbard Hamiltonian.
 - `Neighbours`: Generates the list of neighbours for different lattice structures i.e. the geometry of the lattice.
@@ -157,9 +157,21 @@ Make sure you have the required dependencies installed. You can then launch the 
 ```
 
 #### For mean-field calculations:
-The parameters are not required in the simulation and don't need to be specified. For example if you want to compute again the phase diagram in the mean-field approximation (see the figures), you want to compute 1000 iterations over $\mu$ and $J$ and a precision for convergence $\epsilon = 10^{-6}$. The command line to do so is the following:
+It's not necessary to precise all parameters for the simulation. The parameters you use should match your goal. For example if you want to compute again the phase diagram in the mean-field approximation (see the figures), with 1000 iterations over $\mu$ and $J$ and a precision for convergence $\epsilon = 10^{-6}$. The command line to do so is the following:
 ```sh
 ./QuantumProject -i 1000 -e 6 --t "mean"
+```
+
+## Warning !
+Note that parallelization and optimization are used by default, but it can cause issues during the compilation. For example: 
+```sh
+corrupted size vs. prev_size while consolidating
+Aborted (core dumped)
+```
+
+To avoid it, you can disable the optimisation, although it makes the execution way slower. To do so, ensure to compile in the *Debug mode*:  
+```sh
+cmake -DCMAKE_BUILD_TYPE=Debug ..
 ```
 
 ## Authors
