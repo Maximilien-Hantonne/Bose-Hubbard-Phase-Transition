@@ -162,6 +162,17 @@ It's not necessary to precise all parameters for the simulation. The parameters 
 ./QuantumProject -i 1000 -e 6 --t "mean"
 ```
 
+Note that parallelization and optimization are used by default, but it can cause issues during the compilation. For example: 
+```sh
+corrupted size vs. prev_size while consolidating
+Aborted (core dumped)
+```
+
+To avoid it, you can disable the optimisation, although it makes the execution way slower. To do so, ensure to compile in the *Debug mode*:  
+```sh
+cmake -DCMAKE_BUILD_TYPE=Debug ..
+```
+
 ## Authors
 
 - [Maximilien HANTONNE](https://github.com/Maximilien-Hantonne)
