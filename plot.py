@@ -18,7 +18,7 @@ with open('phase.txt', 'r') as file:
     fixed_value = float(fixed_param_line[1])
     data = np.loadtxt(file)
 
-# Extract J, mu, U, gap_ratio, condensate fraction, and compressibility
+# Extract J, mu, U, gap_ratio, condensate fraction, and coherence
 if fixed_param == "J":
     x_label = 'Interaction Strength (U)'
     y_label = 'Chemical Potential (mu)'
@@ -49,10 +49,9 @@ param1_max = np.max(data[:, 0])
 param2_min = np.min(data[:, 1])
 param2_max = np.max(data[:, 1])
 
-# Extract the gap ratio, condensate fraction, and compressibility
-gap_ratio = data[:, 2]
+# Extract the gap ratio, condensate fraction, and coherence
 condensate_fraction = data[:, 3]
-compressibility = data[:, 4]
+coherence = data[:, 4]
 
 # Create a grid for x and y
 x_unique = np.unique(x_values)
@@ -62,13 +61,13 @@ x_grid, y_grid = np.meshgrid(x_unique, y_unique)
 # Reshape the data arrays to match the grid shape (flatten them for later reshaping)
 gap_ratio_grid = gap_ratio.reshape(len(y_unique), len(x_unique))
 condensate_fraction_grid = condensate_fraction.reshape(len(y_unique), len(x_unique))
-compressibility_grid = compressibility.reshape(len(y_unique), len(x_unique))
+coherence_grid = coherence.reshape(len(y_unique), len(x_unique))
 
 # Apply Gaussian blur for better smoothing (lissage)
 sigma = 2  # Adjust the value of sigma for more/less blur
 gap_ratio_blurred = gaussian_filter(gap_ratio_grid, sigma=sigma)
 condensate_fraction_blurred = gaussian_filter(condensate_fraction_grid, sigma=sigma)
-compressibility_blurred = gaussian_filter(compressibility_grid, sigma=sigma)
+coherence_blurred = gaussian_filter(coherence_grid, sigma=sigma)
 
 # Function to wrap long titles
 def wrap_title(title, width=30):
@@ -103,14 +102,14 @@ plt.savefig(os.path.join(output_dir, 'condensate_fraction_plot.svg'))  # Save as
 plt.show()
 plt.close()
 
-# Plot and save the compressibility plot
+# Plot and save the coherence plot
 plt.figure(figsize=(10, 6))
 plt.contourf(x_grid, y_grid, compressibility_blurred, levels=50, cmap='viridis')
 cbar3 = plt.colorbar(label='Coherence in Boson Density')
 plt.xlabel(x_label)
 plt.ylabel(y_label)
 plt.title(wrap_title('Coherence with respect to {} and {}'.format(x_label, y_label)), fontsize=12)
-plt.savefig(os.path.join(output_dir, 'compressibility_plot.svg'))  # Save as SVG
+plt.savefig(os.path.join(output_dir, 'coherence_plot.svg'))  # Save as SVG
 plt.show()
 plt.close()
 
