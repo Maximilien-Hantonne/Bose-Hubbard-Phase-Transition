@@ -1,16 +1,16 @@
 import matplotlib
 matplotlib.use('TkAgg')
 
+import os
+import textwrap
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
-import textwrap
-import os
+from scipy.ndimage import gaussian_filter
 
 
 
 ################## PHASE MAP ##################
-
 
 # Read the data from the file
 with open('phase.txt', 'r') as file:
@@ -19,26 +19,26 @@ with open('phase.txt', 'r') as file:
     fixed_value = float(fixed_param_line[1])
     data = np.loadtxt(file)
 
-# Extract mu, U, gap_ratio, boson_density, and compressibility
+# Extract J, mu, U, gap_ratio, condensate fraction, and compressibility
 if fixed_param == "J":
-    x_label = 'Normalized Interaction Strength (U/J)'
-    y_label = 'Normalized Chemical Potential (mu/J)'
-    x_values = data[:, 0] / fixed_value
-    y_values = data[:, 1] / fixed_value
+    x_label = 'Interaction Strength (U)'
+    y_label = 'Chemical Potential (mu)'
+    x_values = data[:, 0] 
+    y_values = data[:, 1] 
     non_fixed_param1 = 'U'
     non_fixed_param2 = 'mu'
 elif fixed_param == "U":
-    x_label = 'Normalized Hopping Parameter (J/U)'
-    y_label = 'Normalized Chemical Potential (mu/U)'
-    x_values = data[:, 0] / fixed_value
-    y_values = data[:, 1] / fixed_value
+    x_label = 'Hopping Parameter (J)'
+    y_label = 'Chemical Potential (mu)'
+    x_values = data[:, 0] 
+    y_values = data[:, 1] 
     non_fixed_param1 = 'J'
     non_fixed_param2 = 'mu'
 elif fixed_param == "u":
-    x_label = 'Normalized Hopping Parameter (J/mu)'
-    y_label = 'Normalized Interaction Strength (U/mu)'
-    x_values = data[:, 0] / fixed_value
-    y_values = data[:, 1] / fixed_value
+    x_label = 'Hopping Parameter (J)'
+    y_label = 'Interaction Strength (U)'
+    x_values = data[:, 0] 
+    y_values = data[:, 1] 
     non_fixed_param1 = 'J'
     non_fixed_param2 = 'U'
 else:
@@ -50,15 +50,26 @@ param1_max = np.max(data[:, 0])
 param2_min = np.min(data[:, 1])
 param2_max = np.max(data[:, 1])
 
-# Extract the gap ratio, boson density, and compressibility
+# Extract the gap ratio, condensate fraction, and compressibility
 gap_ratio = data[:, 2]
-boson_density = data[:, 3]
+condensate_fraction = data[:, 3]
 compressibility = data[:, 4]
 
 # Create a grid for x and y
 x_unique = np.unique(x_values)
 y_unique = np.unique(y_values)
 x_grid, y_grid = np.meshgrid(x_unique, y_unique)
+
+# Reshape the data arrays to match the grid shape (flatten them for later reshaping)
+gap_ratio_grid = gap_ratio.reshape(len(y_unique), len(x_unique))
+condensate_fraction_grid = condensate_fraction.reshape(len(y_unique), len(x_unique))
+compressibility_grid = compressibility.reshape(len(y_unique), len(x_unique))
+
+# Apply Gaussian blur for better smoothing (lissage)
+sigma = 2  # Adjust the value of sigma for more/less blur
+gap_ratio_blurred = gaussian_filter(gap_ratio_grid, sigma=sigma)
+condensate_fraction_blurred = gaussian_filter(condensate_fraction_grid, sigma=sigma)
+compressibility_blurred = gaussian_filter(compressibility_grid, sigma=sigma)
 
 # Function to wrap long titles
 def wrap_title(title, width=30):
@@ -69,10 +80,11 @@ output_dir = f'../figures/exact/{fixed_param}_{fixed_value}_{non_fixed_param1}_{
 os.makedirs(output_dir, exist_ok=True)
 
 # Plot the heatmap for gap ratio
-plt.figure(figsize=(18, 6))
+plt.figure(figsize=(19, 6.5))
+plt.suptitle(f'Phase Diagram Analysis with fixed parameter {fixed_param} = {fixed_value}', fontsize=14)
 
 plt.subplot(1, 3, 1)
-contour1 = plt.contourf(x_grid, y_grid, gap_ratio.reshape(len(y_unique), len(x_unique)), levels=50, cmap='viridis')
+contour1 = plt.contourf(x_grid, y_grid, gap_ratio_blurred, levels=50, cmap='viridis')
 cbar1 = plt.colorbar(contour1, label='Gap Ratio')
 cbar1.ax.axhline(y=0.39, color='red', linestyle='solid', linewidth=3)
 cbar1.ax.axhline(y=0.53, color='red', linestyle='solid', linewidth=3)
@@ -81,17 +93,17 @@ plt.ylabel(y_label)
 plt.title(wrap_title('Gap Ratio with respect to {} and {}'.format(x_label, y_label)), fontsize=12)
 plt.figtext(0.5, 0.01, 'Note: 0.39 is for a Poissonnian distribution and 0.53 is for a Gaussian orthogonal ensemble (GOE)', ha='center', fontsize=9, color='red')
 
-# Plot the heatmap for boson density
+# Plot the heatmap for condensate fraction
 plt.subplot(1, 3, 2)
-contour2 = plt.contourf(x_grid, y_grid, boson_density.reshape(len(y_unique), len(x_unique)), levels=50, cmap='viridis')
-cbar2 = plt.colorbar(contour2, label='Boson Density')
+contour2 = plt.contourf(x_grid, y_grid, condensate_fraction_blurred, levels=50, cmap='viridis')
+cbar2 = plt.colorbar(contour2, label='Condensate Fraction')
 plt.xlabel(x_label)
 plt.ylabel(y_label)
-plt.title(wrap_title('Boson Density with respect to {} and {}'.format(x_label, y_label)), fontsize=12)
+plt.title(wrap_title('Condensate fraction with respect to {} and {}'.format(x_label, y_label)), fontsize=12)
 
 # Plot the heatmap for compressibility
 plt.subplot(1, 3, 3)
-contour3 = plt.contourf(x_grid, y_grid, compressibility.reshape(len(y_unique), len(x_unique)), levels=50, cmap='viridis')
+contour3 = plt.contourf(x_grid, y_grid, compressibility_blurred, levels=50, cmap='viridis')
 cbar3 = plt.colorbar(contour3, label='Coherence in Boson Density')
 plt.xlabel(x_label)
 plt.ylabel(y_label)
@@ -103,6 +115,7 @@ plt.savefig(os.path.join(output_dir, 'phase_map.png'))
 plt.tight_layout()
 plt.show()
 plt.close()
+
 
 
 
