@@ -17,7 +17,7 @@ plt.rc('font', family='serif')
 
 
 # Read the data from the file
-with open('phase.txt', 'r') as file:
+with open('phase5.txt', 'r') as file:
     fixed_param_line = file.readline().strip().split()
     fixed_param = fixed_param_line[0]
     fixed_value = float(fixed_param_line[1])
@@ -25,22 +25,22 @@ with open('phase.txt', 'r') as file:
 
 # Extract mu, U, gap_ratio, boson_density, and compressibility
 if fixed_param == "J":
-    x_label = 'Normalized Interaction Strength (U/J)'
-    y_label = 'Normalized Chemical Potential (mu/J)'
+    x_label = 'Normalized Interaction Strength ($U/J$)'
+    y_label = 'Normalized Chemical Potential ($\mu/J$)'
     x_values = data[:, 0] / fixed_value
     y_values = data[:, 1] / fixed_value
     non_fixed_param1 = 'U'
     non_fixed_param2 = 'mu'
 elif fixed_param == "U":
-    x_label = 'Normalized Hopping Parameter (J/U)'
-    y_label = 'Normalized Chemical Potential (mu/U)'
+    x_label = 'Normalized Hopping Parameter ($J/U$)'
+    y_label = 'Normalized Chemical Potential ($\mu / U$)'
     x_values = data[:, 0] / fixed_value
     y_values = data[:, 1] / fixed_value
     non_fixed_param1 = 'J'
     non_fixed_param2 = 'mu'
 elif fixed_param == "u":
-    x_label = 'Normalized Hopping Parameter (J/mu)'
-    y_label = 'Normalized Interaction Strength (U/mu)'
+    x_label = 'Normalized Hopping Parameter ($J/ \mu$)'
+    y_label = 'Normalized Interaction Strength ($U/ \mu$)'
     x_values = data[:, 0] / fixed_value
     y_values = data[:, 1] / fixed_value
     non_fixed_param1 = 'J'
@@ -58,6 +58,7 @@ param2_max = np.max(data[:, 1])
 gap_ratio = data[:, 2]
 boson_density = data[:, 3]
 compressibility = data[:, 4]
+fc = data[:,5]
 
 # Create a grid for x and y
 x_unique = np.unique(x_values)
@@ -81,18 +82,18 @@ cbar1.ax.tick_params(labelsize=20)
 cbar1.ax.axhline(y=0.39, color='red', linestyle='solid', linewidth=3)
 cbar1.ax.axhline(y=0.53, color='red', linestyle='solid', linewidth=3)
 plt.tick_params(axis='both', which='major', labelsize=25)  # Increase tick label size
-plt.xlabel("Normalized hopping parameter ($J/ \mu$)", fontsize = 35)
-plt.ylabel("Normalized interaction strength ($U/ \mu$)", fontsize = 35)
+plt.xlabel(x_label, fontsize = 35)
+plt.ylabel(y_label, fontsize = 35)
 cbar1.set_label(r'Gap ratio', fontsize=35)
 
 # Save the plot
 current_dir = os.path.dirname(os.path.realpath(__file__))
 save_path = os.path.join(current_dir, "..", "figures")
-plt.savefig(os.path.join(save_path, 'gap_ratio.svg'))
+plt.savefig(os.path.join(save_path, 'gap_ratio5.svg'))
 
 plt.tight_layout()
 plt.show()
-plt.close()
+plt.close(fig1)
 
 
 

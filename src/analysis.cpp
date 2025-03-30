@@ -245,15 +245,15 @@ void Analysis::exact_parameters(int m, int n, double J,double U, double mu, doub
     // Calculate the exact parameters
     if (fixed_param == "J") {
         JH = JH * J;
-        calculate_and_save(basis, tags, JH, UH, uH, fixed_param, J, J_min, J_max, mu_min, mu_max, s, s);
+        calculate_and_save(n, basis, tags, JH, UH, uH, fixed_param, J, J_min, J_max, mu_min, mu_max, s, s);
     }
     else if (fixed_param == "U") {
         UH = UH * U;
-        calculate_and_save(basis, tags, UH, JH, uH, fixed_param, U, J_min, J_max, U_min, U_max, s, s);
+        calculate_and_save(n, basis, tags, UH, JH, uH, fixed_param, U, J_min, J_max, U_min, U_max, s, s);
     }
     else{
         uH = uH * mu;
-        calculate_and_save(basis, tags, uH, JH, UH, fixed_param, mu, J_min, J_max, mu_min, mu_max, s, s);
+        calculate_and_save(n, basis, tags, uH, JH, UH, fixed_param, mu, J_min, J_max, mu_min, mu_max, s, s);
     }
 
     // End of the calculations
@@ -264,10 +264,10 @@ void Analysis::exact_parameters(int m, int n, double J,double U, double mu, doub
 
 
 /* calculate and save gap ratio and other quantities */
-void Analysis::calculate_and_save(const Eigen::MatrixXd& basis, const Eigen::VectorXd& tags, const Eigen::SparseMatrix<double> H_fixed, const Eigen::SparseMatrix<double> H1, const Eigen::SparseMatrix<double> H2, std::string fixed_param, double fixed_value, double param1_min, double param1_max, double param2_min, double param2_max, double param1_step, double param2_step) {
+void Analysis::calculate_and_save(int n, const Eigen::MatrixXd& basis, const Eigen::VectorXd& tags, const Eigen::SparseMatrix<double> H_fixed, const Eigen::SparseMatrix<double> H1, const Eigen::SparseMatrix<double> H2, std::string fixed_param, double fixed_value, double param1_min, double param1_max, double param2_min, double param2_max, double param1_step, double param2_step) {
     
     // Save the fixed parameter and value in a file
-    std::ofstream file("phase.txt");
+    std::ofstream file("phase5.txt");
     file << fixed_param << " ";
     if (fixed_value == 0) {
         std::cerr << "Error: Fixed parameter " << fixed_value << " cannot be zero.\n";
@@ -289,6 +289,7 @@ void Analysis::calculate_and_save(const Eigen::MatrixXd& basis, const Eigen::Vec
     Eigen::MatrixXcd eigenvectors;
     Eigen::MatrixXd matrix_ratios(num_param1 * num_param2, nb_eigen -2);
     std::vector<Eigen::MatrixXd> spdm_matrices; 
+    std::vector<double> fcs(num_param1*num_param2); // condensate fractions
 
 
     // Progress bar variables
@@ -332,6 +333,9 @@ void Analysis::calculate_and_save(const Eigen::MatrixXd& basis, const Eigen::Vec
 
                 K = coherence(spdm);
 
+                // Compute the condensate fraction, ie the max eigenvalue of the spdm divided by n the number of bosons 
+                double fc = condensate_fraction(spdm,n); 
+
                 // Normalize the spdm with the distance between each site
                 // normalize_spdm(spdm);
 
@@ -344,6 +348,7 @@ void Analysis::calculate_and_save(const Eigen::MatrixXd& basis, const Eigen::Vec
                     gap_ratios_values[index] = gap_ratio;
                     boson_density_values[index] = density;
                     compressibility_values[index] = K;
+                    fcs[index] = fc; 
                     matrix_ratios.row(index) = vec_ratios;
                     if(j == num_param2 - i - 1){
                         spdm_matrices.push_back(spdm.real());
@@ -378,7 +383,7 @@ void Analysis::calculate_and_save(const Eigen::MatrixXd& basis, const Eigen::Vec
 
     // Save the results to a file
     for (int i = 0; i < num_param1 * num_param2; ++i) {
-        file << param1_values[i] << " " << param2_values[i] << " " << gap_ratios_values[i] << " " << boson_density_values[i] << " " << compressibility_values[i] << std::endl;
+        file << param1_values[i] << " " << param2_values[i] << " " << gap_ratios_values[i] << " " << boson_density_values[i] << " " << compressibility_values[i] << " " << fcs[i] << std::endl;
     }
     file.close();
 
@@ -496,32 +501,53 @@ Eigen::MatrixXcd Analysis::SPDM(const Eigen::MatrixXd& basis, const Eigen::Vecto
     int m = basis.rows();
     Eigen::MatrixXcd spdm = Eigen::MatrixXcd::Zero(m, m);
 
-    // // Calculate the brakets for the ground state
-    // Eigen::VectorXd phi0 = eigenvectors.col(0).real();
-    // for (int i = 0; i < m; ++i) {
-    //     for (int j = i; j < m; ++j) {
-    //         spdm(i, j) = braket(phi0, basis, tags, i, j);
-    //     }
-    //     for (int j = 0; j < i; ++j) {
-    //         spdm(i, j) = std::conj(spdm(j, i));
-    //     }
-    // }
-
-    // Calculate the braket for each eigenvector
-    for (int k = 0; k < eigenvectors.cols(); ++k) {
-        Eigen::VectorXd phi = eigenvectors.col(k).real();
-        for (int i = 0; i < m; ++i) {
-            for (int j = i; j < m; ++j) {
-                spdm(i, j) += braket(phi, basis, tags, i, j);
-            }
-            for (int j = 0; j < i; ++j) {
-                spdm(i, j) += std::conj(spdm(j, i));
-            }
+    // Calculate the brakets for the ground state
+    Eigen::VectorXd phi0 = eigenvectors.col(0).real();
+    for (int i = 0; i < m; ++i) {
+        for (int j = i; j < m; ++j) {
+            spdm(i, j) = braket(phi0, basis, tags, i, j);
+        }
+        for (int j = 0; j < i; ++j) {
+            spdm(i, j) = std::conj(spdm(j, i));
         }
     }
 
-    return spdm/ eigenvectors.cols();
-    // return spdm;
+    return spdm; 
+
+    // // Calculate the braket for each eigenvector
+    // for (int k = 0; k < eigenvectors.cols(); ++k) {
+    //     Eigen::VectorXd phi = eigenvectors.col(k).real();
+    //     for (int i = 0; i < m; ++i) {
+    //         for (int j = i; j < m; ++j) {
+    //             spdm(i, j) += braket(phi, basis, tags, i, j);
+    //         }
+    //         for (int j = 0; j < i; ++j) {
+    //             spdm(i, j) += std::conj(spdm(j, i));
+    //         }
+    //     }
+    // }
+
+    // return spdm/ eigenvectors.cols();
+}
+
+
+double Analysis::condensate_fraction(Eigen::MatrixXcd& spdm, int n)
+{
+    double fc; 
+    spdm = (spdm + spdm.adjoint()) / 2.0 ; 
+    Spectra::DenseSymMatProd<double> op(spdm.real()); 
+    Spectra::SymEigsSolver<Spectra::DenseSymMatProd<double>> eigs(op, 1, 4); 
+    eigs.init(); 
+    [[maybe_unused]] int nconv = eigs.compute(Spectra::SortRule::LargestAlge); 
+    if (eigs.info() != Spectra::CompInfo::Successful) { // verify if the eigen search is a success
+        throw std::runtime_error("Eigenvalue computation for the SPDM failed.");
+        return 1.0;
+    }
+    else{
+        fc =  eigs.eigenvalues()[0]; 
+    }
+
+    return fc/n; 
 }
 
 /* Normalize the spdm to the distance between each site */
@@ -552,7 +578,6 @@ double Analysis::coherence(const Eigen::MatrixXcd& spdm) {
 
     return (sum_all - sum_diag)/sum_all;
 }
-
 
         /* BRAKET CALCULATIONS */
 
