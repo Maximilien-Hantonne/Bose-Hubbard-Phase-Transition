@@ -245,15 +245,15 @@ void Analysis::exact_parameters(int m, int n, double J,double U, double mu, doub
     // Calculate the exact parameters
     if (fixed_param == "J") {
         JH = JH * J;
-        calculate_and_save(n, basis, tags, JH, UH, uH, fixed_param, J, J_min, J_max, mu_min, mu_max, s, s);
+        calculate_and_save(n, basis, tags, JH, UH, uH, fixed_param, J, mu_min, mu_max, U_min, U_max, s, s);
     }
     else if (fixed_param == "U") {
         UH = UH * U;
-        calculate_and_save(n, basis, tags, UH, JH, uH, fixed_param, U, J_min, J_max, U_min, U_max, s, s);
+        calculate_and_save(n, basis, tags, UH, JH, uH, fixed_param, U, J_min, J_max, mu_min, mu_max, s, s);
     }
     else{
         uH = uH * mu;
-        calculate_and_save(n, basis, tags, uH, JH, UH, fixed_param, mu, J_min, J_max, mu_min, mu_max, s, s);
+        calculate_and_save(n, basis, tags, uH, JH, UH, fixed_param, mu, J_min, J_max, U_min, U_max, s, s);
     }
 
     // End of the calculations
@@ -264,10 +264,14 @@ void Analysis::exact_parameters(int m, int n, double J,double U, double mu, doub
 
 
 /* calculate and save gap ratio and other quantities */
-void Analysis::calculate_and_save(int n, const Eigen::MatrixXd& basis, const Eigen::VectorXd& tags, const Eigen::SparseMatrix<double> H_fixed, const Eigen::SparseMatrix<double> H1, const Eigen::SparseMatrix<double> H2, std::string fixed_param, double fixed_value, double param1_min, double param1_max, double param2_min, double param2_max, double param1_step, double param2_step) {
+void Analysis::calculate_and_save(int n, const Eigen::MatrixXd& basis, 
+    const Eigen::VectorXd& tags, const Eigen::SparseMatrix<double> H_fixed, 
+    const Eigen::SparseMatrix<double> H1, 
+    const Eigen::SparseMatrix<double> H2, 
+    std::string fixed_param, double fixed_value, double param1_min, double param1_max, double param2_min, double param2_max, double param1_step, double param2_step) {
     
     // Save the fixed parameter and value in a file
-    std::ofstream file("phase5.txt");
+    std::ofstream file("phase6.txt");
     file << fixed_param << " ";
     if (fixed_value == 0) {
         std::cerr << "Error: Fixed parameter " << fixed_value << " cannot be zero.\n";
@@ -333,8 +337,9 @@ void Analysis::calculate_and_save(int n, const Eigen::MatrixXd& basis, const Eig
 
                 K = coherence(spdm);
 
+                
                 // Compute the condensate fraction, ie the max eigenvalue of the spdm divided by n the number of bosons 
-                double fc = condensate_fraction(spdm,n); 
+                double fc = condensate_fraction(spdm,n);
 
                 // Normalize the spdm with the distance between each site
                 // normalize_spdm(spdm);
