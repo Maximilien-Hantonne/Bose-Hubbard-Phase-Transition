@@ -109,7 +109,7 @@ namespace BH
     * @param q Coordination number.
     * @param h Matrix to store the Hamiltonian.
     */
-    void h_MF(double psi, int p, double mu, double J, int q, Eigen::MatrixXd& h);
+    void MF_hamiltonian(double psi, int p, double mu, double J, int q, Eigen::MatrixXd& h);
 
 } 
 

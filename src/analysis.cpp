@@ -132,7 +132,7 @@ double Analysis::SCMF(double mu, double J, int q ,double psi0, int precision)
         // std::cout << "*** Inner Loop: Computing the ground state e0 and phi0 up to " << eps << " precision ***" << std::endl;
         N_itt_inner = 0; 
         p = 1; 
-        BH::h_MF(psi, p, mu, J, q, h); // single particle hamiltonian in the mean-field approximation
+        BH::MF_hamiltonian(psi, p, mu, J, q, h); // single particle hamiltonian in the mean-field approximation
         // Define a submatrix view of the matrix h; without allocating new memory 
         Eigen::Block<Eigen::MatrixXd> sub_h = h.block(0, 0, 2*p+1, 2*p+1);
         Spectra::DenseSymMatProd<double> op(sub_h); 
@@ -151,7 +151,7 @@ double Analysis::SCMF(double mu, double J, int q ,double psi0, int precision)
         do
         {
             p++; 
-            BH::h_MF(psi, p, mu, J, q, h); // single particle hamiltonian in the mean-field approximation
+            BH::MF_hamiltonian(psi, p, mu, J, q, h); // single particle hamiltonian in the mean-field approximation
             Eigen::Block<Eigen::MatrixXd> sub_h = h.block(0, 0, 2*p+1, 2*p+1);
             Spectra::DenseSymMatProd<double> op(sub_h); 
             Spectra::SymEigsSolver<Spectra::DenseSymMatProd<double>> eigs(op, 1, 2*p);
@@ -271,7 +271,7 @@ void Analysis::calculate_and_save(int n, const Eigen::MatrixXd& basis,
     std::string fixed_param, double fixed_value, double param1_min, double param1_max, double param2_min, double param2_max, double param1_step, double param2_step) {
     
     // Save the fixed parameter and value in a file
-    std::ofstream file("phase6.txt");
+    std::ofstream file("phase_pres.txt");
     file << fixed_param << " ";
     if (fixed_value == 0) {
         std::cerr << "Error: Fixed parameter " << fixed_value << " cannot be zero.\n";
@@ -339,7 +339,7 @@ void Analysis::calculate_and_save(int n, const Eigen::MatrixXd& basis,
 
                 
                 // Compute the condensate fraction, ie the max eigenvalue of the spdm divided by n the number of bosons 
-                double fc = condensate_fraction(spdm,n);
+                // double fc = condensate_fraction(spdm,n);
 
                 // Normalize the spdm with the distance between each site
                 // normalize_spdm(spdm);
@@ -353,7 +353,7 @@ void Analysis::calculate_and_save(int n, const Eigen::MatrixXd& basis,
                     gap_ratios_values[index] = gap_ratio;
                     boson_density_values[index] = density;
                     compressibility_values[index] = K;
-                    fcs[index] = fc; 
+                    // fcs[index] = fc; 
                     matrix_ratios.row(index) = vec_ratios;
                     if(j == num_param2 - i - 1){
                         spdm_matrices.push_back(spdm.real());
@@ -388,7 +388,7 @@ void Analysis::calculate_and_save(int n, const Eigen::MatrixXd& basis,
 
     // Save the results to a file
     for (int i = 0; i < num_param1 * num_param2; ++i) {
-        file << param1_values[i] << " " << param2_values[i] << " " << gap_ratios_values[i] << " " << boson_density_values[i] << " " << compressibility_values[i] << " " << fcs[i] << std::endl;
+        file << param1_values[i] << " " << param2_values[i] << " " << gap_ratios_values[i] << " " << boson_density_values[i] << " " << compressibility_values[i] << std::endl;
     }
     file.close();
 
