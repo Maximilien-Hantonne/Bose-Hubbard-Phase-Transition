@@ -5,7 +5,6 @@ import os
 import textwrap
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.animation as animation
 from scipy.ndimage import gaussian_filter
 
 
@@ -79,42 +78,42 @@ def wrap_title(title, width=30):
 output_dir = f'../figures/exact/{fixed_param}_{fixed_value}_{non_fixed_param1}_{param1_min}-{param1_max}_{non_fixed_param2}_{param2_min}-{param2_max}'
 os.makedirs(output_dir, exist_ok=True)
 
-# Plot the heatmap for gap ratio
-plt.figure(figsize=(19, 6.5))
-plt.suptitle(f'Phase Diagram Analysis with fixed parameter {fixed_param} = {fixed_value}', fontsize=14)
-
-plt.subplot(1, 3, 1)
-contour1 = plt.contourf(x_grid, y_grid, gap_ratio_blurred, levels=50, cmap='viridis')
-cbar1 = plt.colorbar(contour1, label='Gap Ratio')
+# Plot and save the gap ratio plot
+plt.figure(figsize=(10, 6))
+plt.contourf(x_grid, y_grid, gap_ratio_blurred, levels=50, cmap='viridis')
+cbar1 = plt.colorbar(label='Gap Ratio')
 cbar1.ax.axhline(y=0.39, color='red', linestyle='solid', linewidth=3)
 cbar1.ax.axhline(y=0.53, color='red', linestyle='solid', linewidth=3)
 plt.xlabel(x_label)
 plt.ylabel(y_label)
 plt.title(wrap_title('Gap Ratio with respect to {} and {}'.format(x_label, y_label)), fontsize=12)
 plt.figtext(0.5, 0.01, 'Note: 0.39 is for a Poissonnian distribution and 0.53 is for a Gaussian orthogonal ensemble (GOE)', ha='center', fontsize=9, color='red')
+plt.savefig(os.path.join(output_dir, 'gap_ratio_plot.svg'))  # Save as SVG
+plt.show()
+plt.close()
 
-# Plot the heatmap for condensate fraction
-plt.subplot(1, 3, 2)
-contour2 = plt.contourf(x_grid, y_grid, condensate_fraction_blurred, levels=50, cmap='viridis')
-cbar2 = plt.colorbar(contour2, label='Condensate Fraction')
+# Plot and save the condensate fraction plot
+plt.figure(figsize=(10, 6))
+plt.contourf(x_grid, y_grid, condensate_fraction_blurred, levels=50, cmap='viridis')
+cbar2 = plt.colorbar(label='Condensate Fraction')
 plt.xlabel(x_label)
 plt.ylabel(y_label)
 plt.title(wrap_title('Condensate fraction with respect to {} and {}'.format(x_label, y_label)), fontsize=12)
+plt.savefig(os.path.join(output_dir, 'condensate_fraction_plot.svg'))  # Save as SVG
+plt.show()
+plt.close()
 
-# Plot the heatmap for compressibility
-plt.subplot(1, 3, 3)
-contour3 = plt.contourf(x_grid, y_grid, compressibility_blurred, levels=50, cmap='viridis')
-cbar3 = plt.colorbar(contour3, label='Coherence in Boson Density')
+# Plot and save the compressibility plot
+plt.figure(figsize=(10, 6))
+plt.contourf(x_grid, y_grid, compressibility_blurred, levels=50, cmap='viridis')
+cbar3 = plt.colorbar(label='Coherence in Boson Density')
 plt.xlabel(x_label)
 plt.ylabel(y_label)
 plt.title(wrap_title('Coherence with respect to {} and {}'.format(x_label, y_label)), fontsize=12)
-
-# Save the plot
-plt.savefig(os.path.join(output_dir, 'phase_map.png'))
-
-plt.tight_layout()
+plt.savefig(os.path.join(output_dir, 'compressibility_plot.svg'))  # Save as SVG
 plt.show()
 plt.close()
+
 
 
 
