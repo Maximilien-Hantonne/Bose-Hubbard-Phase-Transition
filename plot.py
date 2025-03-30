@@ -17,7 +17,7 @@ plt.rc('font', family='serif')
 
 
 # Read the data from the file
-with open('phase5.txt', 'r') as file:
+with open('phase_pres.txt', 'r') as file:
     fixed_param_line = file.readline().strip().split()
     fixed_param = fixed_param_line[0]
     fixed_value = float(fixed_param_line[1])
@@ -58,7 +58,7 @@ param2_max = np.max(data[:, 1])
 gap_ratio = data[:, 2]
 boson_density = data[:, 3]
 compressibility = data[:, 4]
-fc = data[:,5]
+# fc = data[:,5]
 
 # Create a grid for x and y
 x_unique = np.unique(x_values)
@@ -89,7 +89,7 @@ cbar1.set_label(r'Gap ratio', fontsize=35)
 # Save the plot
 current_dir = os.path.dirname(os.path.realpath(__file__))
 save_path = os.path.join(current_dir, "..", "figures")
-plt.savefig(os.path.join(save_path, 'gap_ratio5.svg'))
+plt.savefig(os.path.join(save_path, 'gap_ratio_pres.svg'))
 
 plt.tight_layout()
 plt.show()

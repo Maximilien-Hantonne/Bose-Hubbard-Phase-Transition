@@ -66,6 +66,11 @@ void Analysis::mean_field_parameters(int n, int precision){
     double dmu = (mu_max - mu_min) / n;
     double q = 1;
 
+    // Progress bar variables
+    std::atomic<int> progress_counter(0);
+    int total_iterations = n*n;
+    const int progress_bar_width = 100;
+
     std::random_device rd; // Seed generator
     std::mt19937 gen(rd()); // Mersenne Twister generator
     std::uniform_real_distribution<> dis(0.0, 1.0); // Uniform distribution in [0, 1]
@@ -74,10 +79,15 @@ void Analysis::mean_field_parameters(int n, int precision){
 
     Resource::timer(); // start the timer
 
-    for (double mu : tqdm::range(mu_min, mu_max, dmu)) {
-        for (double J : tqdm::range(J_min, J_max, dJ)) {
+    for (double mu = mu_min; mu<mu_max; mu+=dmu) {
+        for (double J =J_min; J<J_max; J+=dJ) {
             double psi0 = dis(gen); 
             file << mu << " " << J << " " << SCMF(mu, J, q, psi0, precision) << std::endl;
+
+            progress_counter++;
+            int progress = (progress_counter * progress_bar_width) / total_iterations;
+            std::string bar = "[" + std::string(progress, '#') + std::string(progress_bar_width - progress, ' ') + "]";
+            std::cout << "\rProgress: " << bar << " " << std::setw(3) << (progress_counter * 100) / total_iterations << "% " << std::flush;
         }
     }
 

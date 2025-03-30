@@ -3,7 +3,7 @@ matplotlib.use('TkAgg')
 
 import matplotlib.pyplot as plt
 import numpy as np
-# import scienceplots 
+import scienceplots 
 import os
 
 # Enable LaTex rendering in the plot
