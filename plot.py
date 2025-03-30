@@ -27,22 +27,22 @@ with open('phase_pres.txt', 'r') as file:
 if fixed_param == "J":
     x_label = 'Normalized Interaction Strength ($U/J$)'
     y_label = 'Normalized Chemical Potential ($\mu/J$)'
-    x_values = data[:, 0] / fixed_value
-    y_values = data[:, 1] / fixed_value
+    x_values = data[:, 0] 
+    y_values = data[:, 1] 
     non_fixed_param1 = 'U'
     non_fixed_param2 = 'mu'
 elif fixed_param == "U":
     x_label = 'Normalized Hopping Parameter ($J/U$)'
     y_label = 'Normalized Chemical Potential ($\mu / U$)'
-    x_values = data[:, 0] / fixed_value
-    y_values = data[:, 1] / fixed_value
+    x_values = data[:, 0] 
+    y_values = data[:, 1] 
     non_fixed_param1 = 'J'
     non_fixed_param2 = 'mu'
 elif fixed_param == "u":
     x_label = 'Normalized Hopping Parameter ($J/ \mu$)'
     y_label = 'Normalized Interaction Strength ($U/ \mu$)'
-    x_values = data[:, 0] / fixed_value
-    y_values = data[:, 1] / fixed_value
+    x_values = data[:, 0] 
+    y_values = data[:, 1] 
     non_fixed_param1 = 'J'
     non_fixed_param2 = 'U'
 else:
@@ -70,8 +70,8 @@ def wrap_title(title, width=30):
     return "\n".join(textwrap.wrap(title, width))
 
 # Create the directory to save the plots
-output_dir = f'../figures/exact/{fixed_param}_{fixed_value}_{non_fixed_param1}_{param1_min}-{param1_max}_{non_fixed_param2}_{param2_min}-{param2_max}'
-os.makedirs(output_dir, exist_ok=True)
+# output_dir = f'../figures/exact/{fixed_param}_{fixed_value}_{non_fixed_param1}_{param1_min}-{param1_max}_{non_fixed_param2}_{param2_min}-{param2_max}'
+# os.makedirs(output_dir, exist_ok=True)
 
 # Plot the heatmap for gap ratio
 fig1 = plt.figure(figsize=(11, 11))
