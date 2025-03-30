@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import textwrap
 import os
+import scienceplots 
 
 
 plt.rc('text', usetex=True)
@@ -79,14 +80,15 @@ cbar1 = plt.colorbar(contour1, label='Gap Ratio')
 cbar1.ax.tick_params(labelsize=20)
 cbar1.ax.axhline(y=0.39, color='red', linestyle='solid', linewidth=3)
 cbar1.ax.axhline(y=0.53, color='red', linestyle='solid', linewidth=3)
-plt.xlabel(x_label, fontsize = 35)
-plt.ylabel(y_label, fontsize = 35)
+plt.tick_params(axis='both', which='major', labelsize=25)  # Increase tick label size
+plt.xlabel("Normalized hopping parameter ($J/ \mu$)", fontsize = 35)
+plt.ylabel("Normalized interaction strength ($U/ \mu$)", fontsize = 35)
 cbar1.set_label(r'Gap ratio', fontsize=35)
 
 # Save the plot
 current_dir = os.path.dirname(os.path.realpath(__file__))
 save_path = os.path.join(current_dir, "..", "figures")
-plt.savefig(save_path, 'gap_ratio.svg')
+plt.savefig(os.path.join(save_path, 'gap_ratio.svg'))
 
 plt.tight_layout()
 plt.show()

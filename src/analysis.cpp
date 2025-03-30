@@ -520,8 +520,8 @@ Eigen::MatrixXcd Analysis::SPDM(const Eigen::MatrixXd& basis, const Eigen::Vecto
         }
     }
 
-    // return spdm/ eigenvectors.cols();
-    return spdm;
+    return spdm/ eigenvectors.cols();
+    // return spdm;
 }
 
 /* Normalize the spdm to the distance between each site */
