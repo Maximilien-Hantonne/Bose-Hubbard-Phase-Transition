@@ -17,7 +17,7 @@ save_path = os.path.join(current_dir, "..", "figures")
 plt.style.use('science')
 
 # Read the data from the file
-with open(os.path.join(current_dir,"mean_field_pres.txt"), "r") as file:
+with open(os.path.join(current_dir,"mean_field.txt"), "r") as file:
     data = np.loadtxt(file)
 
 
@@ -43,7 +43,7 @@ plt.ylabel(r'$\frac{\mu}{U}$\ ', fontsize=35, rotation = 0)  # Increase y-axis l
 plt.tick_params(axis='both', which='major', labelsize=25)  # Increase tick label size
 plt.xlim(0,0.25)
 plt.tight_layout()
-plt.savefig(os.path.join(save_path, "mean_field_pres.svg"))
+plt.savefig(os.path.join(save_path, "mean_field.svg"))
 plt.close(fig)
 
 
@@ -81,5 +81,5 @@ plt.plot(Js[Js<Jmax(4)], fitp(Js[Js<Jmax(4)],4), color = 'orange',  marker = '.'
 plt.legend(fontsize = 35, loc = 'center right')
 
 plt.tight_layout()
-plt.savefig(os.path.join(save_path, "mean_field_pres_grey.png"))
+plt.savefig(os.path.join(save_path, "mean_field_grey.png"))
 plt.close(fig2)

@@ -75,7 +75,7 @@ void Analysis::mean_field_parameters(int n, int precision){
     std::mt19937 gen(rd()); // Mersenne Twister generator
     std::uniform_real_distribution<> dis(0.0, 1.0); // Uniform distribution in [0, 1]
 
-    std::ofstream file("mean_field_pres.txt"); 
+    std::ofstream file("mean_field.txt"); 
 
     Resource::timer(); // start the timer
 
@@ -281,7 +281,7 @@ void Analysis::calculate_and_save(int n, const Eigen::MatrixXd& basis,
     std::string fixed_param, double fixed_value, double param1_min, double param1_max, double param2_min, double param2_max, double param1_step, double param2_step) {
     
     // Save the fixed parameter and value in a file
-    std::ofstream file("phase_pres.txt");
+    std::ofstream file("phase.txt");
     file << fixed_param << " ";
     // if (fixed_value == 0) {
     //     std::cerr << "Error: Fixed parameter " << fixed_value << " cannot be zero.\n";
