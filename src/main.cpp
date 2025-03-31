@@ -57,7 +57,7 @@ void print_usage() {
     std::cout << "Copyright (C) 2025 by Maximilien HANTONNE, Rémy LYSCAR and Alexandre MENARD\n";
     std::cout << "This program is licensed under the GNU General Public License v3.0.\n";
     std::cout << "For more details, see the LICENSE file.\n";
-    std::cout << "======================================\n\n\n";
+    std::cout << "======================================\n\n";
 }
 
 

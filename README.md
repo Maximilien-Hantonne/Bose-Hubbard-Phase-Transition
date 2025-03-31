@@ -1,6 +1,6 @@
 <div align="center">
     <a href="https://github.com/Maximilien-Hantonne/Bose-Hubbard-Phase-Transition">
-        <img src="https://github.com/Maximilien-Hantonne/Bose-Hubbard-Phase-Transition/blob/main/figures/mean_field/mean_field_plot.svg" alt="Bose-Hubbard Model Diagram" width="350">
+        <img src="https://github.com/Maximilien-Hantonne/Bose-Hubbard-Phase-Transition/blob/main/figures/mean_field/mean_field_final.svg" alt="Bose-Hubbard Model Diagram" width="350">
     </a>
     <h3 align="center">Mott insulator to Superfluid transition</h3>
     <p align="center">
@@ -10,7 +10,7 @@
 
 # Bose-Hubbard Phase Transition
 
-This repository contains the implementation of the Bose-Hubbard model, which describes interacting bosons on a lattice. The aim of this project is to study the phase transition in the Bose-Hubbard model using various numerical methods.
+This repository contains the implementation of the Bose-Hubbard model, which describes interacting bosons on a lattice. The aim of this project is to study the phase transition in the Bose-Hubbard model using various numerical methods. The theoretical and numerical tools used for this project are described in this [article](https://github.com/Maximilien-Hantonne/Bose-Hubbard-Phase-Transition/blob/main/Bose_Hubbard_Quantum_Phase_Transition.pdf).
 
 ## Project Structure
 
@@ -114,7 +114,7 @@ The PDF documentation will be generated in the `docs/latex` directory.
 
 ## Usage (Linux)
 
-The project provides classes to represent the Bose-Hubbard Hamiltonian and to perform various operations and calculations related to the model. The main classes are:
+The project provides classes to represent the Bose-Hubbard Hamiltonian and to perform various operations and calculations related to the model. The main goals of the files are:
 
 - `BH`: Represents the Bose-Hubbard Hamiltonian.
 - `Neighbours`: Generates the list of neighbours for different lattice structures i.e. the geometry of the lattice.
@@ -162,6 +162,7 @@ It's not necessary to precise all parameters for the simulation. The parameters 
 ./QuantumProject -i 1000 -e 6 --t "mean"
 ```
 
+## Warning !
 Note that parallelization and optimization are used by default, but it can cause issues during the compilation. For example: 
 ```sh
 corrupted size vs. prev_size while consolidating
