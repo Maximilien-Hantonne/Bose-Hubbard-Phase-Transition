@@ -1,6 +1,6 @@
 <div align="center">
-    <a href="https://github.com/Maximilien-Hantonne/Bose-Hubbard-Phase-Transition">
-        <img src="https://github.com/Maximilien-Hantonne/Bose-Hubbard-Phase-Transition/blob/main/figures/mean_field/mean_field_final.svg" alt="Bose-Hubbard Model Diagram" width="350">
+    <a href="https://github.com/Remy-Lyscar/Bose-Hubbard-Phase-Transition">
+        <img src="https://github.com/Remy-Lyscar/Bose-Hubbard-Phase-Transition/blob/main/figures/examples/mean_field_final_ex.svg" alt="Bose-Hubbard Phase Diagram in the mean-field approximation" width="350">
     </a>
     <h3 align="center">Mott insulator to Superfluid transition</h3>
     <p align="center">
