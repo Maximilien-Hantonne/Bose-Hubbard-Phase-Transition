@@ -163,7 +163,7 @@ It's not necessary to precise all parameters for the simulation. The parameters 
 ```
 
 ## Warning !
-Note that parallelization and optimization are used by default, but it can cause issues during the exectution. For example: 
+Note that parallelization and optimization are used by default, but it can cause issues during the execution. For example: 
 ```sh
 corrupted size vs. prev_size while consolidating
 Aborted (core dumped)
