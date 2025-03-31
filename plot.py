@@ -95,8 +95,8 @@ plt.xlabel(x_label, fontsize = 35)
 plt.ylabel(y_label, fontsize = 35)
 cbar1.set_label(r'Gap ratio', fontsize=35)
 plt.tight_layout()
-plt.title(wrap_title('Gap Ratio with respect to {} and {}'.format(x_label, y_label)), fontsize=18)
-plt.figtext(0.5, 0.01, 'Note: 0.39 is for a Poissonnian distribution and 0.53 is for a Gaussian orthogonal ensemble (GOE)', ha='center', fontsize=9, color='red')
+# plt.title(wrap_title('Gap Ratio with respect to {} and {}'.format(x_label, y_label)), fontsize=18)
+# plt.figtext(0.5, 0.01, 'Note: 0.39 is for a Poissonnian distribution and 0.53 is for a Gaussian orthogonal ensemble (GOE)', ha='center', fontsize=9, color='red')
 
 # Save the plot
 current_dir = os.path.dirname(os.path.realpath(__file__))
@@ -108,11 +108,12 @@ plt.close(fig1)
 # Plot and save the condensate fraction plot
 fig2 = plt.figure(figsize=(10, 10))
 contour2 = plt.contourf(x_grid, y_grid, condensate_fraction_blurred, levels=50, cmap='viridis')
-cbar2 = plt.colorbar(label='Condensate Fraction')
+cbar2 = plt.colorbar()
 plt.tick_params(axis='both', which='major', labelsize=25)  # Increase tick label size
 plt.xlabel(x_label, fontsize = 35)
 plt.ylabel(y_label, fontsize = 35)
-cbar1.set_label(r'Gap ratio', fontsize=35)
+cbar2.set_label(r'Condensate fraction', fontsize=35)
+cbar2.ax.tick_params(labelsize=20)
 plt.title(wrap_title('Condensate fraction with respect to {} and {}'.format(x_label, y_label)), fontsize=18)
 plt.savefig(os.path.join(save_path, 'condensate_fraction_plot.svg'))  # Save as SVG
 plt.close(fig2)
@@ -120,11 +121,12 @@ plt.close(fig2)
 # Plot and save the coherence plot
 fig3 = plt.figure(figsize=(10, 10))
 plt.contourf(x_grid, y_grid, coherence_blurred, levels=50, cmap='viridis')
-cbar3 = plt.colorbar(label='Coherence in Boson Density')
+cbar3 = plt.colorbar()
 plt.tick_params(axis='both', which='major', labelsize=25)  # Increase tick label size
 plt.xlabel(x_label, fontsize = 35)
 plt.ylabel(y_label, fontsize = 35)
-cbar1.set_label(r'Gap ratio', fontsize=35)
+cbar3.set_label(r'Cohrence in boson density', fontsize=35)
+cbar3.ax.tick_params(labelsize=20)
 plt.title(wrap_title('Coherence with respect to {} and {}'.format(x_label, y_label)), fontsize=18)
 
 # Save the plot
