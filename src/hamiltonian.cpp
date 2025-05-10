@@ -287,7 +287,7 @@ Eigen::SparseMatrix<double> BH::max_bosons_hamiltonian(const std::vector<std::ve
     return combined_hamiltonian;
 }
 
-void BH::h_MF (double psi, int p, double mu, double J, int q, Eigen::MatrixXd& h){
+void BH::MF_hamiltonian (double psi, int p, double mu, double J, int q, Eigen::MatrixXd& h){
     // fill diagonal elements
     for (int i=0; i<2*p+1; i++)
     {

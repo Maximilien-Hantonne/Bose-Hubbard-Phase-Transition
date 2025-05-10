@@ -7,6 +7,7 @@
 #include <numeric>
 #include <iostream>
 #include <algorithm>
+#include <iomanip>
 
 #include <Eigen/Dense>
 #include <Eigen/SparseCore>
@@ -65,6 +66,11 @@ void Analysis::mean_field_parameters(int n, int precision){
     double dmu = (mu_max - mu_min) / n;
     double q = 1;
 
+    // Progress bar variables
+    std::atomic<int> progress_counter(0);
+    int total_iterations = n*n;
+    const int progress_bar_width = 100;
+
     std::random_device rd; // Seed generator
     std::mt19937 gen(rd()); // Mersenne Twister generator
     std::uniform_real_distribution<> dis(0.0, 1.0); // Uniform distribution in [0, 1]
@@ -73,10 +79,15 @@ void Analysis::mean_field_parameters(int n, int precision){
 
     Resource::timer(); // start the timer
 
-    for (double mu : tqdm::range(mu_min, mu_max, dmu)) {
-        for (double J : tqdm::range(J_min, J_max, dJ)) {
+    for (double mu = mu_min; mu<mu_max; mu+=dmu) {
+        for (double J =J_min; J<J_max; J+=dJ) {
             double psi0 = dis(gen); 
             file << mu << " " << J << " " << SCMF(mu, J, q, psi0, precision) << std::endl;
+
+            progress_counter++;
+            int progress = (progress_counter * progress_bar_width) / total_iterations;
+            std::string bar = "[" + std::string(progress, '#') + std::string(progress_bar_width - progress, ' ') + "]";
+            std::cout << "\rProgress: " << bar << " " << std::setw(3) << (progress_counter * 100) / total_iterations << "% " << std::flush;
         }
     }
 
@@ -131,7 +142,7 @@ double Analysis::SCMF(double mu, double J, int q ,double psi0, int precision)
         // std::cout << "*** Inner Loop: Computing the ground state e0 and phi0 up to " << eps << " precision ***" << std::endl;
         N_itt_inner = 0; 
         p = 1; 
-        BH::h_MF(psi, p, mu, J, q, h); // single particle hamiltonian in the mean-field approximation
+        BH::MF_hamiltonian(psi, p, mu, J, q, h); // single particle hamiltonian in the mean-field approximation
         // Define a submatrix view of the matrix h; without allocating new memory 
         Eigen::Block<Eigen::MatrixXd> sub_h = h.block(0, 0, 2*p+1, 2*p+1);
         Spectra::DenseSymMatProd<double> op(sub_h); 
@@ -150,7 +161,7 @@ double Analysis::SCMF(double mu, double J, int q ,double psi0, int precision)
         do
         {
             p++; 
-            BH::h_MF(psi, p, mu, J, q, h); // single particle hamiltonian in the mean-field approximation
+            BH::MF_hamiltonian(psi, p, mu, J, q, h); // single particle hamiltonian in the mean-field approximation
             Eigen::Block<Eigen::MatrixXd> sub_h = h.block(0, 0, 2*p+1, 2*p+1);
             Spectra::DenseSymMatProd<double> op(sub_h); 
             Spectra::SymEigsSolver<Spectra::DenseSymMatProd<double>> eigs(op, 1, 2*p);
@@ -244,15 +255,15 @@ void Analysis::exact_parameters(int m, int n, double J,double U, double mu, doub
     // Calculate the exact parameters
     if (fixed_param == "J") {
         JH = JH * J;
-        calculate_and_save(basis, tags, JH, UH, uH, fixed_param, J, J_min, J_max, mu_min, mu_max, s, s);
+        calculate_and_save(n, basis, tags, JH, UH, uH, fixed_param, J, mu_min, mu_max, U_min, U_max, s, s);
     }
     else if (fixed_param == "U") {
         UH = UH * U;
-        calculate_and_save(basis, tags, UH, JH, uH, fixed_param, U, J_min, J_max, U_min, U_max, s, s);
+        calculate_and_save(n, basis, tags, UH, JH, uH, fixed_param, U, J_min, J_max, mu_min, mu_max, s, s);
     }
     else{
         uH = uH * mu;
-        calculate_and_save(basis, tags, uH, JH, UH, fixed_param, mu, J_min, J_max, mu_min, mu_max, s, s);
+        calculate_and_save(n, basis, tags, uH, JH, UH, fixed_param, mu, J_min, J_max, U_min, U_max, s, s);
     }
 
     // End of the calculations
@@ -263,7 +274,11 @@ void Analysis::exact_parameters(int m, int n, double J,double U, double mu, doub
 
 
 /* calculate and save gap ratio and other quantities */
-void Analysis::calculate_and_save(const Eigen::MatrixXd& basis, const Eigen::VectorXd& tags, const Eigen::SparseMatrix<double> H_fixed, const Eigen::SparseMatrix<double> H1, const Eigen::SparseMatrix<double> H2, std::string fixed_param, double fixed_value, double param1_min, double param1_max, double param2_min, double param2_max, double param1_step, double param2_step) {
+void Analysis::calculate_and_save(int n, const Eigen::MatrixXd& basis, 
+    const Eigen::VectorXd& tags, const Eigen::SparseMatrix<double> H_fixed, 
+    const Eigen::SparseMatrix<double> H1, 
+    const Eigen::SparseMatrix<double> H2, 
+    std::string fixed_param, double fixed_value, double param1_min, double param1_max, double param2_min, double param2_max, double param1_step, double param2_step) {
     
     // Save the fixed parameter and value in a file
     std::ofstream file("phase.txt");
@@ -287,7 +302,9 @@ void Analysis::calculate_and_save(const Eigen::MatrixXd& basis, const Eigen::Vec
     std::vector<double> coherence_values(num_param1 * num_param2);
     Eigen::MatrixXcd eigenvectors;
     Eigen::MatrixXd matrix_ratios(num_param1 * num_param2, nb_eigen -2);
-    std::vector<Eigen::MatrixXd> spdm_matrices;
+    std::vector<Eigen::MatrixXd> spdm_matrices; 
+    std::vector<double> fcs(num_param1*num_param2); // condensate fractions
+
 
     // Progress bar variables
     std::atomic<int> progress_counter(0);
@@ -335,6 +352,10 @@ void Analysis::calculate_and_save(const Eigen::MatrixXd& basis, const Eigen::Vec
 
                 // Coherence
                 K = coherence(spdm);
+
+                
+                // Compute the condensate fraction, ie the max eigenvalue of the spdm divided by n the number of bosons 
+                // double fc = condensate_fraction(spdm,n);
 
                 // Normalize the spdm with the distance between each site
                 // normalize_spdm(spdm);
@@ -554,7 +575,6 @@ double Analysis::coherence(const Eigen::MatrixXcd& spdm) {
     }
     return (sum_all - sum_diag)/sum_all;
 }
-
 
         /* BRAKET CALCULATIONS */
 

@@ -28,7 +28,7 @@ void mean_field_parameters(int n, int precision);
             ///// EXACT CALCULATIONS /////
 
 /* Calculate the gap ratios, spdm, boson density, and compressibility for a range of parameters */
-static void calculate_and_save(const Eigen::MatrixXd& basis, const Eigen::VectorXd& tags, const Eigen::SparseMatrix<double> H_fixed, const Eigen::SparseMatrix<double> H1, const Eigen::SparseMatrix<double> H2, std::string fixed_param, double fixed_value, double param1_min, double param1_max, double param2_min, double param2_max, double param1_step, double param2_step);
+static void calculate_and_save(int n, const Eigen::MatrixXd& basis, const Eigen::VectorXd& tags, const Eigen::SparseMatrix<double> H_fixed, const Eigen::SparseMatrix<double> H1, const Eigen::SparseMatrix<double> H2, std::string fixed_param, double fixed_value, double param1_min, double param1_max, double param2_min, double param2_max, double param1_step, double param2_step);
 
 // GAP RATIOS
 
@@ -55,6 +55,9 @@ static Eigen::MatrixXcd density_matrix(const Eigen::VectorXcd eigenvalues, Eigen
 
 /* Calculate the compressibility of the system */
 static double coherence(const Eigen::MatrixXcd& spdm);
+
+/* Compute the condensate fraction of the ground state */
+static double condensate_fraction(Eigen::MatrixXcd& spdm, int n); 
 
 /* Normalize the spdm to the distance between each site */
 static void normalize_spdm(Eigen::MatrixXcd& spdm);

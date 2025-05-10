@@ -21,31 +21,61 @@ file(GLOB_RECURSE SRC_FILES src/*.cpp)
 add_executable(${PROJECT_NAME} ${SRC_FILES})
 
 
-# ======== Optimization ========
-# Enable compiler optimizations
-if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=native")
-endif()
-
-
-# ======== Disable All Warnings ========
-if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-    target_compile_options(${PROJECT_NAME} PRIVATE -w)
-    # Additional flags to suppress specific Clang warnings
-    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-        target_compile_options(${PROJECT_NAME} PRIVATE
-            -Wno-analyzer-too-complex
-            -Wno-analyzer-infinite-loop
-            -Wno-analyzer-null-dereference
-            -Wno-analyzer-deadcode
-            -Wno-analyzer-undefined-retval
-            -Wno-analyzer-undefined-behavior
-        )
+# ======== Debugging Options ========
+# Add -g and remove optimizations for debugging
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    target_compile_options(${PROJECT_NAME} PRIVATE -O0 -g)
+    if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -g")
     endif()
-elseif(MSVC)
-    target_compile_options(${PROJECT_NAME} PRIVATE /W0)
+
+
+    # ======== Disable All Warnings ========
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        target_compile_options(${PROJECT_NAME} PRIVATE -w)
+        # Additional flags to suppress specific Clang warnings
+        if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+            target_compile_options(${PROJECT_NAME} PRIVATE
+                -Wno-analyzer-too-complex
+                -Wno-analyzer-infinite-loop
+                -Wno-analyzer-null-dereference
+                -Wno-analyzer-deadcode
+                -Wno-analyzer-undefined-retval
+                -Wno-analyzer-undefined-behavior
+            )
+        endif()
+    elseif(MSVC)
+        target_compile_options(${PROJECT_NAME} PRIVATE /W0)
+    endif()
 endif()
 
+
+# ======== Optimization ========
+# Enable compiler optimizations (by default)
+if(NOT CMAKE_BUILD_TYPE)
+    if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -march=native")
+    endif()
+
+
+    # ======== Disable All Warnings ========
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        target_compile_options(${PROJECT_NAME} PRIVATE -w)
+        # Additional flags to suppress specific Clang warnings
+        if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+            target_compile_options(${PROJECT_NAME} PRIVATE
+                -Wno-analyzer-too-complex
+                -Wno-analyzer-infinite-loop
+                -Wno-analyzer-null-dereference
+                -Wno-analyzer-deadcode
+                -Wno-analyzer-undefined-retval
+                -Wno-analyzer-undefined-behavior
+            )
+        endif()
+    elseif(MSVC)
+        target_compile_options(${PROJECT_NAME} PRIVATE /W0)
+    endif()
+endif()
 
 # ======== OpenMP ========
 find_package(OpenMP REQUIRED)
